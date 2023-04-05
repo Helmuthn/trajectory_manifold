@@ -1,0 +1,1 @@
+from .main import trapezoidal_inner_product
