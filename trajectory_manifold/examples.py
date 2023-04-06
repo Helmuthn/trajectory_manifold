@@ -5,10 +5,16 @@ from typing import Callable
 from jaxtyping import Array, Float, jaxtyped
 
 @jaxtyped
-def LorenzVectorField(N: int, F: float) \
-        -> Callable[[Float, Float[Array, " dim"], any], Float[Array, " dim"]]:
-    """ Returns a function representing the lorenz 96 system
+def LorenzVectorField(
+    F: float
+) -> Callable[[Float, Float[Array, " dim"], any], Float[Array, " dim"]]:
+    """ Returns a function representing the Lorenz 96 system.
     
+    Args:
+        F: The constant forcing term
+    
+    Returns:
+        A function representing the vector field for the Lorenz 96 system.
     """
     @jit
     def out(t, y, args):
