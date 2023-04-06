@@ -1,0 +1,15 @@
+.. Trajectory Manifold documentation master file, created by
+   sphinx-quickstart on Thu Apr  6 14:10:26 2023.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+Trajectory Manifold Documentation!
+===============================================
+
+This is a Python library for doing statistics on the manifold of trajectories
+implicitly defined by a differential equation.
+
+.. note::
+
+   This project is under active development for an anticipated paper submission.
+ 
