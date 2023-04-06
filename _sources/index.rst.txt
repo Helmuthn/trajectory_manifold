@@ -3,18 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Trajectory Manifold's documentation!
+Trajectory Manifold Documentation!
 ===============================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+This is a Python library for doing statistics on the manifold of trajectories
+implicitly defined by a differential equation.
 
+.. note::
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   This project is under active development for an anticipated paper submission.
+ 
