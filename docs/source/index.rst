@@ -12,4 +12,13 @@ implicitly defined by a differential equation.
 .. note::
 
    This project is under active development for an anticipated paper submission.
+
+The key feature of this library is the ability to push densities
+through the implicit transformation between the state space of the system
+and the trajectory manifold.
  
+API
+===
+
+.. automodule:: trajectory_manifold
+   :members: 

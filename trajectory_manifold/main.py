@@ -1,12 +1,10 @@
-from dataclasses import dataclass 
-
 from jax import jit, jacrev
 from jax.lax import fori_loop
 from jax.numpy import dot, zeros, sqrt
 from jax.numpy.linalg import det
 import jax.numpy as jnp
 
-from jaxtyping import Float, Array, PyTree, jaxtyped
+from jaxtyping import Float, Array, PyTree
 from typing import Callable
 
 from diffrax import AbstractSolver, Tsit5
