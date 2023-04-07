@@ -1,6 +1,13 @@
 from trajectory_manifold.main import trapezoidal_inner_product
 from trajectory_manifold.main import trapezoidal_correlation
+from trajectory_manifold.main import SolverParameters
+from trajectory_manifold.main import system_sensitivity
+from trajectory_manifold.examples import LinearVectorField
+
 from jax.numpy import asarray, expand_dims
+from diffrax import Tsit5
+
+from math import exp
 
 
 class Test_trapezoidal_inner_product:
@@ -37,3 +44,29 @@ class Test_trapezoidal_correlation:
         assert abs(results[0,1] - 1/4) < 0.001
         assert abs(results[1,0] - 1/4) < 0.001
         assert abs(results[1,1] - 1/5) < 0.001
+
+
+class Test_system_sensitivity:
+    params = SolverParameters(solver=Tsit5(),
+                              relative_tolerance=1e-5,
+                              absolute_tolerance=1e-5,
+                              time_horizon=1,
+                              step_size=0.1)
+
+    def test_dimensions(self):
+        dynamics = asarray([[-1.0, 0.0],[0.0, 1.0]])
+        vector_field = LinearVectorField(dynamics)
+        initial_condition = asarray([1.0, 1.0])
+        U = system_sensitivity(vector_field, initial_condition, self.params)
+        assert U.shape == (2, 11, 2)
+
+    def test_dimension_order(self):
+        dynamics = asarray([[-1.0, 0.0],[0.0, 1.0]])
+        vector_field = LinearVectorField(dynamics)
+        initial_condition = asarray([1.0, 1.0])
+        U = system_sensitivity(vector_field, initial_condition, self.params)
+        print(U)
+        assert abs(U[1,-1,1] - exp(1)) < 0.01
+        assert abs(U[0,-1,0] - exp(-1)) < 0.01
+        assert abs(U[0,-1,1]) < 0.01
+        assert abs(U[1,-1,0]) < 0.01

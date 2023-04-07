@@ -1,6 +1,6 @@
 from dataclasses import dataclass 
 
-from jax import jit
+from jax import jit, jacrev
 from jax.lax import fori_loop
 from jax.numpy import dot, zeros, sqrt
 from jax.numpy.linalg import det
@@ -10,6 +10,7 @@ from jaxtyping import Float, Array
 from typing import Callable
 
 from diffrax import AbstractSolver, Tsit5
+from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
 
 
 @dataclass
@@ -129,7 +130,7 @@ def system_sensitivity(
     vector_field: Callable[[Float[Array, " dim"]], Float[Array, " dim"]], 
     initial_condition: Float[Array, " dim"],
     parameters: SolverParameters,
-    ) -> Float[Array, " dim timesteps"]:
+) -> Float[Array, " dim timesteps dim"]:
     """Computes the differential equation sensitivity to the initial conditions.
     
     Given a differential equation, initial condition, and desired time horizon,
@@ -149,14 +150,38 @@ def system_sensitivity(
         to a perturbation along some element of an orthonormal basis of the
         state space.
     """
-    pass
+
+    term = ODETerm(vector_field)
+    solver = parameters.solver
+    numsteps = int(parameters.time_horizon / parameters.step_size) + 1
+    saveat = SaveAt(ts = [i*parameters.step_size for i in range(numsteps)])
+    stepsize_controller = PIDController(rtol = parameters.relative_tolerance,
+                                        atol = parameters.absolute_tolerance)
+
+    @jit
+    def diffeq_solution(
+        x0: Float[Array, " dim"],
+    ) -> Float[Array, " timesteps dim"]:
+        """Returns the solution to the differential equation."""
+        return diffeqsolve(term,
+                           solver,
+                           t0 = 0,
+                           t1 = parameters.time_horizon,
+                           dt0 = 0.1,
+                           saveat = saveat,
+                           stepsize_controller = stepsize_controller,
+                           y0 = x0).ys
+
+    sensitivity = jacrev(diffeq_solution)(initial_condition)
+
+    return jnp.moveaxis(sensitivity, 2, 0)
 
 
 def system_pushforward_weight(
     vector_field: Callable[[Float[Array, " dim"]], Float[Array, " dim"]], 
     time_horizon: Float, 
     initial_condition: Float[Array, " dim"],
-    ) -> Float:
+) -> Float:
     """Computes the pushforward weight for a given initial condition.
     
     Given a differential equation, initial condition, and desired time horizon,

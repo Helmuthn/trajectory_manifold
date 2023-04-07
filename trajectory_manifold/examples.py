@@ -34,3 +34,26 @@ def LorenzVectorField(
 
     return out
 
+
+@jaxtyped
+def LinearVectorField(
+    A: Float[Array, " dim dim"]
+) -> Callable[[Float, Float[Array, " dim"], any], Float[Array, " dim"]]:
+    """ Returns a function representing a linear system.
+    
+    Args:
+        A: A matrix defining the system dynamics
+    
+    Returns:
+        A function representing teh vector field for a linear system.
+    """
+
+    @jit
+    @jaxtyped
+    def out(t: any, 
+            y: Float[Array, " dim"], 
+            args: any,
+    ) -> Float[Array, " dim"]:
+        return A @ y
+
+    return out
