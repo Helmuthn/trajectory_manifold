@@ -40,6 +40,29 @@ implicitly defined by a differential equation.</p>
 </div>
 <div class="section" id="key-functions">
 <h2>Key Functions<a class="headerlink" href="#key-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="trajectory_manifold.system_pushforward_weight">
+<code class="sig-prename descclassname">trajectory_manifold.</code><code class="sig-name descname">system_pushforward_weight</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trajectory_manifold.system_pushforward_weight" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the pushforward weight for a given initial condition.</p>
+<p>Given a differential equation, initial condition, and desired time horizon,
+computes the weight required to push densities onto the Riemannian manifold
+of valid trajectories of the system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vector_field</strong> – Governing differential equation mapping the current state
+to the derivative.</p></li>
+<li><p><strong>time_horizon</strong> – Time horizon for the trajectory manifold.</p></li>
+<li><p><strong>initial_conditon</strong> – The position in the statespace to be pushed onto
+the manifold.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The weight required to push a density onto the trajectory manifold.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 </div>
 
