@@ -2,12 +2,13 @@ from trajectory_manifold.main import trapezoidal_inner_product
 from trajectory_manifold.main import trapezoidal_correlation
 from trajectory_manifold.main import SolverParameters
 from trajectory_manifold.main import system_sensitivity
+from trajectory_manifold.main import system_pushforward_weight
 from trajectory_manifold.examples import LinearVectorField
 
 from jax.numpy import asarray, expand_dims
 from diffrax import Tsit5
 
-from math import exp
+from math import exp, sqrt
 
 
 class Test_trapezoidal_inner_product:
@@ -70,3 +71,17 @@ class Test_system_sensitivity:
         assert abs(U[0,-1,0] - exp(-1)) < 0.01
         assert abs(U[0,-1,1]) < 0.01
         assert abs(U[1,-1,0]) < 0.01
+
+
+class Test_system_pushforward_weight:
+    def test_linear(self):
+        dynamics = asarray([[-1.0, 0.0],[0.0, 1.0]])
+        vector_field = LinearVectorField(dynamics)
+        time_horizon=1
+        initial_condition = asarray([1.0, 1.0])
+        weight = system_pushforward_weight(vector_field,
+                                           time_horizon,
+                                           initial_condition)
+        truth = sqrt(0.25 * (1 - exp(-2)) * (exp(2) - 1))
+        assert abs(weight - truth) < 0.1
+

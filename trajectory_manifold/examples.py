@@ -2,7 +2,7 @@ from jax.numpy import zeros
 from jax.lax import fori_loop
 from jax import jit
 from typing import Callable
-from jaxtyping import Array, Float, jaxtyped
+from jaxtyping import Array, Float, jaxtyped, PyTree
 
 @jaxtyped
 def LorenzVectorField(
@@ -38,7 +38,7 @@ def LorenzVectorField(
 @jaxtyped
 def LinearVectorField(
     A: Float[Array, " dim dim"]
-) -> Callable[[Float, Float[Array, " dim"], any], Float[Array, " dim"]]:
+) -> Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]]:
     """ Returns a function representing a linear system.
     
     Args:
@@ -50,9 +50,9 @@ def LinearVectorField(
 
     @jit
     @jaxtyped
-    def out(t: any, 
+    def out(t: Float, 
             y: Float[Array, " dim"], 
-            args: any,
+            args: PyTree,
     ) -> Float[Array, " dim"]:
         return A @ y
 

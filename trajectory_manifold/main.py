@@ -6,15 +6,17 @@ from jax.numpy import dot, zeros, sqrt
 from jax.numpy.linalg import det
 import jax.numpy as jnp
 
-from jaxtyping import Float, Array
+from jaxtyping import Float, Array, PyTree, jaxtyped
 from typing import Callable
 
 from diffrax import AbstractSolver, Tsit5
 from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
 
+from functools import partial
+from typing import NamedTuple
 
-@dataclass
-class SolverParameters:
+
+class SolverParameters(NamedTuple):
     """Stores Information for ODE Solvers.
     
     Records the parameters for solving an ODE using Diffrax,
@@ -126,8 +128,9 @@ def trapezoidal_correlation(
     return out
 
 
+@partial(jit, static_argnames=['vector_field', 'parameters'])
 def system_sensitivity(
-    vector_field: Callable[[Float[Array, " dim"]], Float[Array, " dim"]], 
+    vector_field: Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     initial_condition: Float[Array, " dim"],
     parameters: SolverParameters,
 ) -> Float[Array, " dim timesteps dim"]:
@@ -153,8 +156,11 @@ def system_sensitivity(
 
     term = ODETerm(vector_field)
     solver = parameters.solver
-    numsteps = int(parameters.time_horizon / parameters.step_size) + 1
-    saveat = SaveAt(ts = [i*parameters.step_size for i in range(numsteps)])
+    timesteps = jnp.arange(0, 
+                           parameters.time_horizon + parameters.step_size, 
+                           step=parameters.step_size)
+
+    saveat = SaveAt(ts = timesteps)
     stepsize_controller = PIDController(rtol = parameters.relative_tolerance,
                                         atol = parameters.absolute_tolerance)
 
@@ -177,8 +183,9 @@ def system_sensitivity(
     return jnp.moveaxis(sensitivity, 2, 0)
 
 
+@partial(jit, static_argnames=['vector_field', 'time_horizon'])
 def system_pushforward_weight(
-    vector_field: Callable[[Float[Array, " dim"]], Float[Array, " dim"]], 
+    vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
     time_horizon: Float, 
     initial_condition: Float[Array, " dim"],
 ) -> Float:
@@ -210,6 +217,6 @@ def system_pushforward_weight(
                                   solver)
 
     U = system_sensitivity(vector_field, initial_condition, parameters)
-    A = trapezoidal_correlation(U)
+    A = trapezoidal_correlation(U, step_size)
 
     return sqrt(abs(det(A)))
