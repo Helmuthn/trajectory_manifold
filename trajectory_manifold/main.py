@@ -4,6 +4,7 @@ from jax import jit
 from jax.lax import fori_loop
 from jax.numpy import dot, zeros, sqrt
 from jax.numpy.linalg import det
+import jax.numpy as jnp
 
 from jaxtyping import Float, Array
 from typing import Callable
@@ -32,10 +33,31 @@ class SolverParameters:
     time_horizon: float
     solver: AbstractSolver
 
+    
+@jit
+def frobenius_inner_product(
+    x: Float[Array, " *dim"], 
+    y: Float[Array, " *dim"], 
+) -> Float:
+    """Computes the Frobenius inner product of two matrices.
+
+    Given two multidimensional arrays, computes the sum of
+    the elementwise product of the arrays.
+    
+    Args:
+        x: A multidimensional array.
+        y: A multidimensional array.
+    
+    Returns:
+        The sum of the elementwise product of x and y.
+    """
+    return jnp.sum(x * y)
+
+
 @jit
 def trapezoidal_inner_product(
-    x: Float[Array, " dim"], 
-    y: Float[Array, " dim"], 
+    x: Float[Array, " timesteps dim"], 
+    y: Float[Array, " timesteps dim"], 
     step_size: Float,
 ) -> Float:
     """Approximate the inner product by the trapezoidal rule.
@@ -45,31 +67,35 @@ def trapezoidal_inner_product(
     Computed through the trapezoidal integration scheme.
     
     Args:
-        x: Grid approximation of the first function.
-        y: Grid approximation of the second function.
+        x: Grid approximation of the first function. Each row represents the 
+          value of the multivariate function at a given timestep.
+        y: Grid approximation of the second function. Each row represents the
+          value of the multivariate function at a given timestep.
         step_size: Spacing between sample points in the functions.
         
     Returns:
-        An approximation of the inner product.
+        An approximation of the L2 inner product.
     """
 
-    out = (x[0] * y[0] + x[-1] * y[-1]) / 2
-    out += dot(x[1:-1], y[1:-1])
+    out = (dot(x[0, :],  y[0, :]) + dot(x[-1, :], y[-1, :])) / 2
+    out += frobenius_inner_product(x[1:-1, :], y[1:-1, :])
     return out * step_size
 
 
 @jit
 def trapezoidal_correlation(
-    U: Float[Array, " dim1 dim2"],
+    U: Float[Array, " functions timesteps dim"],
     step_size: Float,
-) -> Float[Array, " dim1 dim1"]:
+) -> Float[Array, " functions functions"]:
     """Computes the inner products between rows of the given matrix.
     
-    Constructs an M by M matrix of approximate inner products between M functions
-    computed using N evenly spaced samples the trapezoidal integration scheme. 
+    Constructs an M by M matrix of approximate inner products between M 
+    multi-variate functions computed using N evenly spaced samples in a 
+    trapezoidal integration scheme. 
     
     Args:
-        U: M by N matrix, where each row represents a sampled function.
+        U: M by N by K matrix representing N samples each of M functions that
+          take values in a K-dimensional space.
         step_size: Spacing between sample points in the functions.
     
     Returns:
@@ -77,24 +103,24 @@ def trapezoidal_correlation(
         inner product between rows i and j of the input matrix. 
     """
 
-    N = U.shape[0]
-    out = zeros((N, N))
+    M = U.shape[0]
+    out = zeros((M, M))
 
     def inner(i, val):
         out, U, step_size = val
 
         def inner2(j, val):
             out, U, step_size, i = val
-            value = trapezoidal_inner_product(U[i,:], U[j,:], step_size)
+            value = trapezoidal_inner_product(U[i,...], U[j,...], step_size)
             out = out.at[i,j].set(value)
             out = out.at[j,i].set(value)
             return (out, U, step_size, i)
 
-        out, U, step_size, i = fori_loop(i, N, inner2, (out, U, step_size, i))
+        out, U, step_size, i = fori_loop(i, M, inner2, (out, U, step_size, i))
 
         return out, U, step_size
 
-    out, U, step_size = fori_loop(0, N, inner, (out, U, step_size))
+    out, U, step_size = fori_loop(0, M, inner, (out, U, step_size))
 
     return out
 
@@ -103,7 +129,7 @@ def system_sensitivity(
     vector_field: Callable[[Float[Array, " dim"]], Float[Array, " dim"]], 
     initial_condition: Float[Array, " dim"],
     parameters: SolverParameters,
-    ) -> Float[Array, " dim"]:
+    ) -> Float[Array, " dim timesteps"]:
     """Computes the differential equation sensitivity to the initial conditions.
     
     Given a differential equation, initial condition, and desired time horizon,

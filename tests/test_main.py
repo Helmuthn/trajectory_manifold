@@ -1,12 +1,13 @@
 from trajectory_manifold.main import trapezoidal_inner_product
 from trajectory_manifold.main import trapezoidal_correlation
-from jax.numpy import asarray
+from jax.numpy import asarray, expand_dims
 
 
 class Test_trapezoidal_inner_product:
     def test_trapezoidal_norm(self):
         """Tests inner product of x**2 with itself"""
         x = asarray([(i/1000.0)**2 for i in range(1001)])
+        x = expand_dims(x, 1)
         stepsize = 1/1000.0
         val = trapezoidal_inner_product(x, x, stepsize)
         assert abs(val - 1/5) < 0.001
@@ -16,6 +17,8 @@ class Test_trapezoidal_inner_product:
         """Tests inner product of x**2 with x"""
         x = asarray([(i/1000.0)**2 for i in range(1001)])
         y = asarray([(i/1000.0) for i in range(1001)])
+        x = expand_dims(x, 1)
+        y = expand_dims(y, 1)
         stepsize = 1/1000.0
         val = trapezoidal_inner_product(x, y, stepsize)
         assert abs(val - 1/4) < 0.001
@@ -26,6 +29,8 @@ class Test_trapezoidal_correlation:
         data = [[(i/1000.0)    for i in range(1001)],
                 [(i/1000.0)**2 for i in range(1001)]]
         U = asarray(data)
+        U = expand_dims(U, 2)
+
         stepsize = 1/1000.0
         results = trapezoidal_correlation(U, stepsize)
         assert abs(results[0,0] - 1/3) < 0.001
