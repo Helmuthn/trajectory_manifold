@@ -16,4 +16,4 @@ implicitly defined by a differential equation.
 Key Functions
 -------------
 
-.. autofunction:: trajetory_manifold.system_pushforward_weight
+.. autofunction:: trajectory_manifold.system_pushforward_weight
