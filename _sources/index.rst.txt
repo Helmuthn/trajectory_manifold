@@ -13,3 +13,7 @@ implicitly defined by a differential equation.
 
    This project is under active development for an anticipated paper submission.
  
+Key Functions
+-------------
+
+.. autofunction:: trajetory_manifold.system_pushforward_weight
