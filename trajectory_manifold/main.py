@@ -155,7 +155,7 @@ def system_sensitivity(
 def system_pushforward_weight(
     vector_field: Callable[[Float[Array, " dim"]], Float[Array, " dim"]], 
     time_horizon: Float, 
-    initial_condition: Float[Array, " dim"]
+    initial_condition: Float[Array, " dim"],
     ) -> Float:
     """Computes the pushforward weight for a given initial condition.
     
