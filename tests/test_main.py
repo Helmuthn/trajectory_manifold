@@ -1,11 +1,14 @@
-from trajectory_manifold.main import trapezoidal_inner_product
-from trajectory_manifold.main import trapezoidal_correlation
-from trajectory_manifold.main import SolverParameters
-from trajectory_manifold.main import system_sensitivity
-from trajectory_manifold.main import system_pushforward_weight
-from trajectory_manifold.examples import LinearVectorField
+from trajectory_manifold import trapezoidal_inner_product
+from trajectory_manifold import trapezoidal_correlation
+from trajectory_manifold import SolverParameters
+from trajectory_manifold import system_sensitivity
+from trajectory_manifold import system_pushforward_weight
+from trajectory_manifold.examples import linear_vector_field
+
+from trajectory_manifold.helpers import apply_kernel_vec
 
 from jax.numpy import asarray, expand_dims
+import jax.numpy as jnp
 from diffrax import Tsit5
 
 from math import exp, sqrt
@@ -56,14 +59,14 @@ class Test_system_sensitivity:
 
     def test_dimensions(self):
         dynamics = asarray([[-1.0, 0.0],[0.0, 1.0]])
-        vector_field = LinearVectorField(dynamics)
+        vector_field = linear_vector_field(dynamics)
         initial_condition = asarray([1.0, 1.0])
         U = system_sensitivity(vector_field, initial_condition, self.params)
         assert U.shape == (2, 11, 2)
 
     def test_dimension_order(self):
         dynamics = asarray([[-1.0, 0.0],[0.0, 1.0]])
-        vector_field = LinearVectorField(dynamics)
+        vector_field = linear_vector_field(dynamics)
         initial_condition = asarray([1.0, 1.0])
         U = system_sensitivity(vector_field, initial_condition, self.params)
         print(U)
@@ -76,7 +79,7 @@ class Test_system_sensitivity:
 class Test_system_pushforward_weight:
     def test_linear(self):
         dynamics = asarray([[-1.0, 0.0],[0.0, 1.0]])
-        vector_field = LinearVectorField(dynamics)
+        vector_field = linear_vector_field(dynamics)
         time_horizon=1
         initial_condition = asarray([1.0, 1.0])
         weight = system_pushforward_weight(vector_field,
@@ -85,3 +88,16 @@ class Test_system_pushforward_weight:
         truth = sqrt(0.25 * (1 - exp(-2)) * (exp(2) - 1))
         assert abs(weight - truth) < 0.1
 
+
+class Test_apply_kernel_vec:
+    def test_basic(self):
+        functions = 2
+        time_steps = 10
+        dimensions = 3
+        x = jnp.ones((functions, time_steps, dimensions))
+        kernel = jnp.ones((time_steps, dimensions, dimensions))
+
+        out = apply_kernel_vec(x, kernel)
+        truth = 3 * jnp.ones((functions, time_steps, dimensions))
+        assert (out == truth).all()
+        

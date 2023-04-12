@@ -7,9 +7,10 @@ __all__ = ["SolverParameters",
            "trapezoidal_inner_product",
            "frobenius_inner_product"]
 
-from .main import trapezoidal_inner_product
 from .main import system_pushforward_weight
 from .main import system_sensitivity
-from .main import trapezoidal_correlation
-from .main import frobenius_inner_product
 from .main import SolverParameters
+
+from .helpers import trapezoidal_inner_product
+from .helpers import trapezoidal_correlation
+from .helpers import frobenius_inner_product

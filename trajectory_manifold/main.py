@@ -1,7 +1,11 @@
+""" Computing geometric transformations onto the trajectory manifold.
+
+This module contains the core functions requires for geometric transformations
+of quantities onto the trajectory manifold through the use of an ODE
+solver and a known vector field.
+"""
+
 from jax import jit, jacrev
-from jax.lax import fori_loop
-from jax.numpy import dot, zeros, sqrt
-from jax.numpy.linalg import det
 import jax.numpy as jnp
 
 from jaxtyping import Float, Array, PyTree
@@ -12,6 +16,8 @@ from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
 
 from functools import partial
 from typing import NamedTuple
+
+from .helpers import trapezoidal_correlation, trapezoidal_correlation_weighted
 
 
 class SolverParameters(NamedTuple):
@@ -33,97 +39,6 @@ class SolverParameters(NamedTuple):
     step_size: float
     time_horizon: float
     solver: AbstractSolver
-
-    
-@jit
-def frobenius_inner_product(
-    x: Float[Array, " *dim"], 
-    y: Float[Array, " *dim"], 
-) -> Float:
-    """Computes the Frobenius inner product of two matrices.
-
-    Given two multidimensional arrays, computes the sum of
-    the elementwise product of the arrays.
-    
-    Args:
-        x: A multidimensional array.
-        y: A multidimensional array.
-    
-    Returns:
-        The sum of the elementwise product of x and y.
-    """
-    return jnp.sum(x * y)
-
-
-@jit
-def trapezoidal_inner_product(
-    x: Float[Array, " timesteps dim"], 
-    y: Float[Array, " timesteps dim"], 
-    step_size: Float,
-) -> Float:
-    """Approximate the inner product by the trapezoidal rule.
-    
-    Computes an approximate inner product between two functions represented
-    by a finite-grid approximation with a fixed step size.
-    Computed through the trapezoidal integration scheme.
-    
-    Args:
-        x: Grid approximation of the first function. Each row represents the 
-          value of the multivariate function at a given timestep.
-        y: Grid approximation of the second function. Each row represents the
-          value of the multivariate function at a given timestep.
-        step_size: Spacing between sample points in the functions.
-        
-    Returns:
-        An approximation of the L2 inner product.
-    """
-
-    out = (dot(x[0, :],  y[0, :]) + dot(x[-1, :], y[-1, :])) / 2
-    out += frobenius_inner_product(x[1:-1, :], y[1:-1, :])
-    return out * step_size
-
-
-@jit
-def trapezoidal_correlation(
-    U: Float[Array, " functions timesteps dim"],
-    step_size: Float,
-) -> Float[Array, " functions functions"]:
-    """Computes the inner products between rows of the given matrix.
-    
-    Constructs an M by M matrix of approximate inner products between M 
-    multi-variate functions computed using N evenly spaced samples in a 
-    trapezoidal integration scheme. 
-    
-    Args:
-        U: M by N by K matrix representing N samples each of M functions that
-          take values in a K-dimensional space.
-        step_size: Spacing between sample points in the functions.
-    
-    Returns:
-        An M by M matrix where the (i,j)'th element is the approximate
-        inner product between rows i and j of the input matrix. 
-    """
-
-    M = U.shape[0]
-    out = zeros((M, M))
-
-    def inner(i, val):
-        out, U, step_size = val
-
-        def inner2(j, val):
-            out, U, step_size, i = val
-            value = trapezoidal_inner_product(U[i,...], U[j,...], step_size)
-            out = out.at[i,j].set(value)
-            out = out.at[j,i].set(value)
-            return (out, U, step_size, i)
-
-        out, U, step_size, i = fori_loop(i, M, inner2, (out, U, step_size, i))
-
-        return out, U, step_size
-
-    out, U, step_size = fori_loop(0, M, inner, (out, U, step_size))
-
-    return out
 
 
 @partial(jit, static_argnames=['vector_field', 'parameters'])
@@ -180,6 +95,7 @@ def system_sensitivity(
 
     return jnp.moveaxis(sensitivity, 2, 0)
 
+    sensitivity = jacrev(diffeq_solution)(initial_condition)
 
 @partial(jit, static_argnames=['vector_field', 'time_horizon'])
 def system_pushforward_weight(
@@ -217,4 +133,44 @@ def system_pushforward_weight(
     U = system_sensitivity(vector_field, initial_condition, parameters)
     A = trapezoidal_correlation(U, step_size)
 
-    return sqrt(abs(det(A)))
+    return jnp.sqrt(abs(jnp.linalg.det(A)))
+
+@partial(jit, static_argnames=['vector_field', 'time_horizon'])
+def system_pushforward_weight_reweighted(
+    vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
+    time_horizon: Float, 
+    initial_condition: Float[Array, " dim"],
+    step_size: Float,
+    kernel: Float[Array, " timesteps dim dim"]
+) -> Float:
+    """Computes the pushforward weight for a given initial condition.
+    
+    Given a differential equation, initial condition, and desired time horizon,
+    computes the weight required to push densities onto the Riemannian manifold
+    of valid trajectories of the system.
+    
+    Args:
+        vector_field: Governing differential equation mapping the current state
+          to the derivative.
+        time_horizon: Time horizon for the trajectory manifold.
+        initial_conditon: The position in the statespace to be pushed onto 
+          the manifold.
+        
+    Returns:
+        The weight required to push a density onto the trajectory manifold.
+    """
+
+    absolute_tolerance = 1e-4
+    relative_tolerance = 1e-4
+    step_size = 0.01
+    solver = Tsit5()
+    parameters = SolverParameters(relative_tolerance, 
+                                  absolute_tolerance, 
+                                  step_size, 
+                                  time_horizon, 
+                                  solver)
+
+    U = system_sensitivity(vector_field, initial_condition, parameters)
+    A = trapezoidal_correlation_weighted(U, step_size, kernel)
+
+    return jnp.sqrt(abs(jnp.linalg.det(A)))
