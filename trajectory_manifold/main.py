@@ -97,6 +97,7 @@ def system_sensitivity(
 
     sensitivity = jacrev(diffeq_solution)(initial_condition)
 
+
 @partial(jit, static_argnames=['vector_field', 'time_horizon'])
 def system_pushforward_weight(
     vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
@@ -135,6 +136,7 @@ def system_pushforward_weight(
 
     return jnp.sqrt(abs(jnp.linalg.det(A)))
 
+
 @partial(jit, static_argnames=['vector_field', 'time_horizon'])
 def system_pushforward_weight_reweighted(
     vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
@@ -155,6 +157,9 @@ def system_pushforward_weight_reweighted(
         time_horizon: Time horizon for the trajectory manifold.
         initial_conditon: The position in the statespace to be pushed onto 
           the manifold.
+        step_size: The step size for the numerical solution of the ODE.
+        kernel: An N by K by K array of N timesteps of an integral kernel to
+          apply to a K dimensional space.
         
     Returns:
         The weight required to push a density onto the trajectory manifold.
@@ -162,7 +167,6 @@ def system_pushforward_weight_reweighted(
 
     absolute_tolerance = 1e-4
     relative_tolerance = 1e-4
-    step_size = 0.01
     solver = Tsit5()
     parameters = SolverParameters(relative_tolerance, 
                                   absolute_tolerance, 
