@@ -17,10 +17,6 @@ The key feature of this library is the ability to push densities
 through the implicit transformation between the state space of the system
 and the trajectory manifold.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
 
 Usage
 =====
@@ -45,8 +41,11 @@ The key function in the library is ``manifold.system_pushforward_weight``.
 Given a description of the dynamics and forecasting objective, this function
 constructs the associated reweighting for a given point.
 
-Core Functionality 
-==================
+API 
+===
+
+Manifold 
+--------
 
 The core functionality is found in the `trajectory_manifold.manifold` module.
 
@@ -68,7 +67,7 @@ The core functionality is found in the `trajectory_manifold.manifold` module.
 
 
 Estimation 
-==========
+----------
 
 The module `trajectory_manifold.estimation` contains example estimation algorithms
 using the trajectory manifold reweighting. While these functions are essentially
@@ -79,7 +78,7 @@ serve primarily as a proof of concept.
    :members: 
 
 Optimization 
-============
+------------
 
 The module `trajectory_manifold.optimize` contains a couple of optimization 
 procedures for the estimators.
@@ -89,7 +88,7 @@ The main one of which is an implementation of a simulated annealing optimizer.
    :members:
 
 Helpers
-=======
+-------
 
 The module `trajectory_manifold.helpers` contains a collection of helper functions
 for the small modifications to linear algebra operations required in the
@@ -99,7 +98,7 @@ project.
    :members:
 
 Examples 
-========
+--------
 
 The module `trajectory_manifold.examples` contains a collection of example systems 
 to be used with the trajectory forecasting work.
