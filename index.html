@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Trajectory Manifold Documentation! &#8212; Trajectory Manifold 0.1 documentation</title>
+    <title>Trajectory Manifold &#8212; Trajectory Manifold 0.1 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -30,8 +30,8 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="trajectory-manifold-documentation">
-<h1>Trajectory Manifold Documentation!<a class="headerlink" href="#trajectory-manifold-documentation" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="trajectory-manifold">
+<h1>Trajectory Manifold<a class="headerlink" href="#trajectory-manifold" title="Permalink to this headline">¶</a></h1>
 <p>This is a Python library for doing statistics on the manifold of trajectories
 implicitly defined by a differential equation.</p>
 <div class="admonition note">
@@ -43,6 +43,61 @@ through the implicit transformation between the state space of the system
 and the trajectory manifold.</p>
 <div class="toctree-wrapper compound">
 </div>
+</div>
+<div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>Installation is to come later. This code will eventually be turned into a
+package to be installed with pip.</p>
+</div>
+<div class="section" id="quick-start">
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h2>
+<p>Trajectory estimation over any finite time-horizon is a reparameterization
+of the state estimation problem for a system.
+Thus, the only change to classical estimation methods is to incorporate the
+reparameterization to the objective function.</p>
+<p>The key function in the library is <code class="docutils literal notranslate"><span class="pre">manifold.system_pushforward_weight</span></code>.</p>
+<dl class="function">
+<dt id="trajectory_manifold.manifold.system_pushforward_weight">
+<code class="sig-prename descclassname">trajectory_manifold.manifold.</code><code class="sig-name descname">system_pushforward_weight</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trajectory_manifold.manifold.system_pushforward_weight" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the pushforward weight for a given initial condition.</p>
+<p>Given a differential equation, initial condition, and desired time horizon,
+computes the weight required to push densities onto the Riemannian manifold
+of valid trajectories of the system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vector_field</strong> – Governing differential equation mapping the current state
+to the derivative.</p></li>
+<li><p><strong>time_horizon</strong> – Time horizon for the trajectory manifold.</p></li>
+<li><p><strong>initial_conditon</strong> – The position in the statespace to be pushed onto
+the manifold.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The weight required to push a density onto the trajectory manifold.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p>Given a description of the dynamics and forecasting objective, this function
+constructs the associated reweighting for a given point.</p>
+</div>
+</div>
+<div class="section" id="api">
+<h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trajectory_manifold</span></code></p></td>
+<td><p>A Python library for computing statistics on trajectory manifolds.</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 
 

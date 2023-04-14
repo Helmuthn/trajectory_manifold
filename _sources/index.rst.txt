@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Trajectory Manifold Documentation!
+Trajectory Manifold
 ===============================================
 
 This is a Python library for doing statistics on the manifold of trajectories
@@ -20,3 +20,37 @@ and the trajectory manifold.
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+
+Usage
+=====
+
+Installation
+------------
+
+Installation is to come later. This code will eventually be turned into a 
+package to be installed with pip.
+
+Quick Start 
+-----------
+
+Trajectory estimation over any finite time-horizon is a reparameterization
+of the state estimation problem for a system.
+Thus, the only change to classical estimation methods is to incorporate the
+reparameterization to the objective function.
+
+The key function in the library is ``manifold.system_pushforward_weight``.
+
+.. autofunction:: trajectory_manifold.manifold.system_pushforward_weight
+
+Given a description of the dynamics and forecasting objective, this function
+constructs the associated reweighting for a given point.
+
+
+API 
+===
+
+.. autosummary::
+   :toctree: generated
+
+   trajectory_manifold
