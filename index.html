@@ -73,16 +73,18 @@ solver and a known vector field.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="trajectory_manifold.manifold.trajectory_manifold.manifold.SolverParameters">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">trajectory_manifold.manifold.</span></span><span class="sig-name descname"><span class="pre">SolverParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">NamedTuple</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#trajectory_manifold.manifold.trajectory_manifold.manifold.SolverParameters" title="Permalink to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">Stores</span> <span class="pre">Information</span> <span class="pre">for</span> <span class="pre">ODE</span> <span class="pre">Solvers.</span></span></dt>
-<dd><p>Records the parameters for solving an ODE using Diffrax,
+<dd><p>Stores Information for ODE Solvers.</p>
+<p>Records the parameters for solving an ODE using Diffrax,
 including the solver, tolerances, output grid size, and time horizon</p>
-<dl class="simple">
-<dt>Attributes:</dt><dd><p>relative_tolerance: Relative tolerance for the ODE solution
-absolute_tolerance: Absolute tolerance for the ODE solution
-step_size: Output mesh size. Note: Does not impact internal computations.
-time_horizon: Length of the solution in seconds.
-solver: The particular ODE solver to use.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>relative_tolerance</strong> – Relative tolerance for the ODE solution</p></li>
+<li><p><strong>absolute_tolerance</strong> – Absolute tolerance for the ODE solution</p></li>
+<li><p><strong>step_size</strong> – Output mesh size. Note: Does not impact internal computations.</p></li>
+<li><p><strong>time_horizon</strong> – Length of the solution in seconds.</p></li>
+<li><p><strong>solver</strong> – The particular ODE solver to use.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>

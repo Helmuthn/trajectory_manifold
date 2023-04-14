@@ -53,17 +53,17 @@ The core functionality is found in the `trajectory_manifold.manifold` module.
    :members: system_sensitivity, system_pushforward_weight, system_pushforward_weight_reweighted
 
    .. py:class:: trajectory_manifold.manifold.SolverParameters(NamedTuple)
+
       Stores Information for ODE Solvers. 
 
       Records the parameters for solving an ODE using Diffrax,
       including the solver, tolerances, output grid size, and time horizon
     
-      Attributes:
-          relative_tolerance: Relative tolerance for the ODE solution
-          absolute_tolerance: Absolute tolerance for the ODE solution
-          step_size: Output mesh size. Note: Does not impact internal computations.
-          time_horizon: Length of the solution in seconds.
-          solver: The particular ODE solver to use.
+      :param relative_tolerance: Relative tolerance for the ODE solution
+      :param absolute_tolerance: Absolute tolerance for the ODE solution
+      :param step_size: Output mesh size. Note: Does not impact internal computations.
+      :param time_horizon: Length of the solution in seconds.
+      :param solver: The particular ODE solver to use.
 
 
 Estimation 
