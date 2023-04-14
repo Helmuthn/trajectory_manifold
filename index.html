@@ -58,9 +58,63 @@ of the state estimation problem for a system.
 Thus, the only change to classical estimation methods is to incorporate the
 reparameterization to the objective function.</p>
 <p>The key function in the library is <code class="docutils literal notranslate"><span class="pre">manifold.system_pushforward_weight</span></code>.</p>
-<dl class="function">
+<p>Given a description of the dynamics and forecasting objective, this function
+constructs the associated reweighting for a given point.</p>
+</div>
+</div>
+<div class="section" id="core-functionality">
+<h1>Core Functionality<a class="headerlink" href="#core-functionality" title="Permalink to this headline">¶</a></h1>
+<p>The core functionality is found in the <cite>trajectory_manifold.manifold</cite> module.</p>
+<span class="target" id="module-trajectory_manifold.manifold"></span><p>Computing geometric transformations onto the trajectory manifold.</p>
+<p>This module contains the core functions requires for geometric transformations
+of quantities onto the trajectory manifold through the use of an ODE
+solver and a known vector field.</p>
+<dl class="class">
+<dt id="trajectory_manifold.manifold.trajectory_manifold.manifold.SolverParameters">
+<em class="property">class </em><code class="sig-prename descclassname">trajectory_manifold.manifold.</code><code class="sig-name descname">SolverParameters</code><span class="sig-paren">(</span><em class="sig-param">NamedTuple</em><span class="sig-paren">)</span><a class="headerlink" href="#trajectory_manifold.manifold.trajectory_manifold.manifold.SolverParameters" title="Permalink to this definition">¶</a></dt>
+<dt>
+<code class="sig-name descname">Stores Information for ODE Solvers.</code></dt>
+<dd><p>Records the parameters for solving an ODE using Diffrax,
+including the solver, tolerances, output grid size, and time horizon</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><p>relative_tolerance: Relative tolerance for the ODE solution
+absolute_tolerance: Absolute tolerance for the ODE solution
+step_size: Output mesh size. Note: Does not impact internal computations.
+time_horizon: Length of the solution in seconds.
+solver: The particular ODE solver to use.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trajectory_manifold.manifold.system_sensitivity">
+<code class="sig-prename descclassname">trajectory_manifold.manifold.</code><code class="sig-name descname">system_sensitivity</code><a class="headerlink" href="#trajectory_manifold.manifold.system_sensitivity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the differential equation sensitivity to the initial conditions.</p>
+<p>Given a differential equation, initial condition, and desired time horizon,
+computes the Jacobian of the transformation from the initial condition
+to the Riemannian manifold of valid trajectories. The Jacobian is expressed
+in the ambient space of square integrable functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vector_field</strong> – Governing differential equation mapping the current state
+to the derivative.</p></li>
+<li><p><strong>initial_condition</strong> – The position in the statespace to be pushed onto
+the manifold.</p></li>
+<li><p><strong>parameters</strong> – The set of parameters for the ODE solver.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A matrix where each row represents the sensitivity of the system solution
+to a perturbation along some element of an orthonormal basis of the
+state space.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="trajectory_manifold.manifold.system_pushforward_weight">
-<code class="sig-prename descclassname">trajectory_manifold.manifold.</code><code class="sig-name descname">system_pushforward_weight</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#trajectory_manifold.manifold.system_pushforward_weight" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">trajectory_manifold.manifold.</code><code class="sig-name descname">system_pushforward_weight</code><a class="headerlink" href="#trajectory_manifold.manifold.system_pushforward_weight" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the pushforward weight for a given initial condition.</p>
 <p>Given a differential equation, initial condition, and desired time horizon,
 computes the weight required to push densities onto the Riemannian manifold
@@ -81,23 +135,273 @@ the manifold.</p></li>
 </dl>
 </dd></dl>
 
-<p>Given a description of the dynamics and forecasting objective, this function
-constructs the associated reweighting for a given point.</p>
+<dl class="attribute">
+<dt id="trajectory_manifold.manifold.system_pushforward_weight_reweighted">
+<code class="sig-prename descclassname">trajectory_manifold.manifold.</code><code class="sig-name descname">system_pushforward_weight_reweighted</code><a class="headerlink" href="#trajectory_manifold.manifold.system_pushforward_weight_reweighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the pushforward weight for a given initial condition.</p>
+<p>Given a differential equation, initial condition, and desired time horizon,
+computes the weight required to push densities onto the Riemannian manifold
+of valid trajectories of the system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vector_field</strong> – Governing differential equation mapping the current state
+to the derivative.</p></li>
+<li><p><strong>time_horizon</strong> – Time horizon for the trajectory manifold.</p></li>
+<li><p><strong>initial_conditon</strong> – The position in the statespace to be pushed onto
+the manifold.</p></li>
+<li><p><strong>step_size</strong> – The step size for the numerical solution of the ODE.</p></li>
+<li><p><strong>kernel</strong> – An N by K by K array of N timesteps of an integral kernel to
+apply to a K dimensional space.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The weight required to push a density onto the trajectory manifold.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
+<div class="section" id="estimation">
+<h1>Estimation<a class="headerlink" href="#estimation" title="Permalink to this headline">¶</a></h1>
+<p>The module <cite>trajectory_manifold.estimation</cite> contains example estimation algorithms
+using the trajectory manifold reweighting. While these functions are essentially
+plug-and-play for new problems, they are not the best implementations and
+serve primarily as a proof of concept.</p>
 </div>
-<div class="section" id="api">
-<h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trajectory_manifold</span></code></p></td>
-<td><p>A Python library for computing statistics on trajectory manifolds.</p></td>
-</tr>
-</tbody>
-</table>
+<div class="section" id="optimization">
+<h1>Optimization<a class="headerlink" href="#optimization" title="Permalink to this headline">¶</a></h1>
+<p>The module <cite>trajectory_manifold.optimize</cite> contains a couple of optimization
+procedures for the estimators.
+The main one of which is an implementation of a simulated annealing optimizer.</p>
+<span class="target" id="module-trajectory_manifold.optimize"></span><p>This module is for MCMC optimization methods.</p>
+<p>The main approach in this module is to use simulated annealing.
+This is due to the dependence of the first-order derivative of the
+posterior distribution of trajectories on the second-order sensitivity
+of the solution to the initial conditions.</p>
+<dl class="function">
+<dt id="trajectory_manifold.optimize.simulated_annealing">
+<code class="sig-prename descclassname">trajectory_manifold.optimize.</code><code class="sig-name descname">simulated_annealing</code><span class="sig-paren">(</span><em class="sig-param">f: Callable</em>, <em class="sig-param">proposal_variable: Callable</em>, <em class="sig-param">sample_count: int</em><span class="sig-paren">)</span><a class="headerlink" href="#trajectory_manifold.optimize.simulated_annealing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optimize a given function through simulated annealing.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="helpers">
+<h1>Helpers<a class="headerlink" href="#helpers" title="Permalink to this headline">¶</a></h1>
+<p>The module <cite>trajectory_manifold.helpers</cite> contains a collection of helper functions
+for the small modifications to linear algebra operations required in the
+project.</p>
+<span class="target" id="module-trajectory_manifold.helpers"></span><p>This module contains linear algebra helper functions.</p>
+<p>The purpose of this module is to adapt standard linear algebra
+fuctions to the needs of this project. These include items such
+as computation of an inner product through the trapezoidal rule.</p>
+<dl class="attribute">
+<dt id="trajectory_manifold.helpers.apply_kernel">
+<code class="sig-prename descclassname">trajectory_manifold.helpers.</code><code class="sig-name descname">apply_kernel</code><a class="headerlink" href="#trajectory_manifold.helpers.apply_kernel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper Function to apply an integration kernel to an input.</p>
+<p>Applies the kernel to an input at each timestep.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – An N by K array of N samples of each of a function
+taking values in a K-dimensional space.</p></li>
+<li><p><strong>kernel</strong> – An N by K by K array of N samples of an integral kernel
+applying transformations to each associated timestep of x</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An N by K array represented the result of the transformation.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trajectory_manifold.helpers.apply_kernel_vec">
+<code class="sig-prename descclassname">trajectory_manifold.helpers.</code><code class="sig-name descname">apply_kernel_vec</code><a class="headerlink" href="#trajectory_manifold.helpers.apply_kernel_vec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper Function to apply an integration kernel to an input.</p>
+<p>Applies the kernel to an input at each timestep.
+Vectorized along a set of functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – An M by N by K array of N samples of each of M functions
+taking values in a K-dimensional space.</p></li>
+<li><p><strong>kernel</strong> – An N by K by K array of N samples of an integral kernel
+applying transformations to each associated timestep of x</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An M by N by K array represented the result of the transformation.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trajectory_manifold.helpers.frobenius_inner_product">
+<code class="sig-prename descclassname">trajectory_manifold.helpers.</code><code class="sig-name descname">frobenius_inner_product</code><a class="headerlink" href="#trajectory_manifold.helpers.frobenius_inner_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the Frobenius inner product of two matrices.</p>
+<p>Given two multidimensional arrays, computes the sum of
+the elementwise product of the arrays.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – A multidimensional array.</p></li>
+<li><p><strong>y</strong> – A multidimensional array.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The sum of the elementwise product of x and y.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trajectory_manifold.helpers.trapezoidal_correlation">
+<code class="sig-prename descclassname">trajectory_manifold.helpers.</code><code class="sig-name descname">trapezoidal_correlation</code><a class="headerlink" href="#trajectory_manifold.helpers.trapezoidal_correlation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the inner products between rows of the given matrix.</p>
+<p>Constructs an M by M matrix of approximate inner products between M
+multi-variate functions computed using N evenly spaced samples in a
+trapezoidal integration scheme.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U</strong> – M by N by K matrix representing N samples each of M functions that
+take values in a K-dimensional space.</p></li>
+<li><p><strong>step_size</strong> – Spacing between sample points in the functions.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An M by M matrix where the (i,j)’th element is the approximate
+inner product between rows i and j of the input matrix.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trajectory_manifold.helpers.trapezoidal_correlation_weighted">
+<code class="sig-prename descclassname">trajectory_manifold.helpers.</code><code class="sig-name descname">trapezoidal_correlation_weighted</code><a class="headerlink" href="#trajectory_manifold.helpers.trapezoidal_correlation_weighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the inner products between rows of the given matrix.</p>
+<p>Constructs an M by M matrix of approximate inner products between M
+multi-variate functions computed using N evenly spaced samples in a
+trapezoidal integration scheme.
+Uses an integral kernel to define the inner product.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U</strong> – M by N by K array representing N samples each of M functions that
+take values in a K-dimensional space.</p></li>
+<li><p><strong>step_size</strong> – Spacing between sample points in the functions.</p></li>
+<li><p><strong>kernel</strong> – N by K by K array representing an integral kernel defining
+the inner product in the underlying space.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An M by M matrix where the (i,j)’th element is the approximate
+inner product between rows i and j of the input matrix.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trajectory_manifold.helpers.trapezoidal_inner_product">
+<code class="sig-prename descclassname">trajectory_manifold.helpers.</code><code class="sig-name descname">trapezoidal_inner_product</code><a class="headerlink" href="#trajectory_manifold.helpers.trapezoidal_inner_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Approximate the inner product by the trapezoidal rule.</p>
+<p>Computes an approximate inner product between two functions represented
+by a finite-grid approximation with a fixed step size.
+Computed through the trapezoidal integration scheme.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – Grid approximation of the first function. Each row represents the
+value of the multivariate function at a given timestep.</p></li>
+<li><p><strong>y</strong> – Grid approximation of the second function. Each row represents the
+value of the multivariate function at a given timestep.</p></li>
+<li><p><strong>step_size</strong> – Spacing between sample points in the functions.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An approximation of the L2 inner product.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="trajectory_manifold.helpers.trapezoidal_inner_product_weighted">
+<code class="sig-prename descclassname">trajectory_manifold.helpers.</code><code class="sig-name descname">trapezoidal_inner_product_weighted</code><a class="headerlink" href="#trajectory_manifold.helpers.trapezoidal_inner_product_weighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Approximate the inner product by the trapezoidal rule.</p>
+<p>Computes an approximate inner product between two functions represented
+by a finite-grid approximation with a fixed step size.
+Computed through the trapezoidal integration scheme.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – Grid approximation of the first function. Each row represents the
+value of the multivariate function at a given timestep.</p></li>
+<li><p><strong>y</strong> – Grid approximation of the second function. Each row represents the
+value of the multivariate function at a given timestep.</p></li>
+<li><p><strong>step_size</strong> – Spacing between sample points in the functions.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An approximation of the L2 inner product.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+<p>The module <cite>trajectory_manifold.examples</cite> contains a collection of example systems
+to be used with the trajectory forecasting work.
+It contains functions which generate vector fields for a linear system,
+a periodic system, and a chaotic system.</p>
+<span class="target" id="module-trajectory_manifold.examples"></span><dl class="function">
+<dt id="trajectory_manifold.examples.linear_vector_field">
+<code class="sig-prename descclassname">trajectory_manifold.examples.</code><code class="sig-name descname">linear_vector_field</code><span class="sig-paren">(</span><em class="sig-param">A: jaxtyping.Float[Array, ' dim dim']</em><span class="sig-paren">)</span> &#x2192; Callable[[jaxtyping.Float, jaxtyping.Float[Array, ' dim'], jaxtyping.PyTree], jaxtyping.Float[Array, ' dim']]<a class="headerlink" href="#trajectory_manifold.examples.linear_vector_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a function representing a linear system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>A</strong> – A matrix defining the system dynamics</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A function representing the vector field for a linear system.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="trajectory_manifold.examples.lorenz_vector_field">
+<code class="sig-prename descclassname">trajectory_manifold.examples.</code><code class="sig-name descname">lorenz_vector_field</code><span class="sig-paren">(</span><em class="sig-param">F: float</em><span class="sig-paren">)</span> &#x2192; Callable[[jaxtyping.Float, jaxtyping.Float[Array, ' dim'], any], jaxtyping.Float[Array, ' dim']]<a class="headerlink" href="#trajectory_manifold.examples.lorenz_vector_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a function representing the Lorenz 96 system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>F</strong> – The constant forcing term</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A function representing the vector field for the Lorenz 96 system.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="trajectory_manifold.examples.lotka_volterra_vector_field">
+<code class="sig-prename descclassname">trajectory_manifold.examples.</code><code class="sig-name descname">lotka_volterra_vector_field</code><span class="sig-paren">(</span><em class="sig-param">prey_growth: float</em>, <em class="sig-param">predation_rate: float</em>, <em class="sig-param">predator_growth: float</em>, <em class="sig-param">predator_decay: float</em><span class="sig-paren">)</span> &#x2192; Callable[[jaxtyping.Float, jaxtyping.Float[Array, ' dim'], jaxtyping.PyTree], jaxtyping.Float[Array, ' dim']]<a class="headerlink" href="#trajectory_manifold.examples.lotka_volterra_vector_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a function representing a Lotka-Volterra system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prey_growth</strong> – Exponential growth rate of prey without predation.</p></li>
+<li><p><strong>predation_rate</strong> – Decay rate for prey in contact with predator.</p></li>
+<li><p><strong>predator_growth</strong> – Growth rate for predators in contact with prey.</p></li>
+<li><p><strong>predator_decay</strong> – Exponential decay rate of predators without prey.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A function representing the vector field for a Lotka-Volterra system.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 
 
