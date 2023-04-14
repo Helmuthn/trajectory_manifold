@@ -1,0 +1,23 @@
+.attribute {
+	border-width: 2px;
+	border-color: grey;
+	border-style: solid;
+	margin:  1em;
+	padding: 1em;
+}
+
+.function {
+	border-width: 2px;
+	border-color: grey;
+	border-style: solid;
+	margin:  1em;
+	padding: 1em;
+}
+
+.class {
+	border-width: 2px;
+	border-color: grey;
+	border-style: solid;
+	margin:  1em;
+	padding: 1em;
+}
