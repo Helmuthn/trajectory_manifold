@@ -1,6 +1,6 @@
-from trajectory_manifold import SolverParameters
-from trajectory_manifold import system_sensitivity
-from trajectory_manifold import system_pushforward_weight
+from trajectory_manifold.manifold import SolverParameters
+from trajectory_manifold.manifold import system_sensitivity
+from trajectory_manifold.manifold import system_pushforward_weight
 from trajectory_manifold.examples import linear_vector_field
 
 

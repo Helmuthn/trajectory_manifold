@@ -1,0 +1,50 @@
+.attribute {
+	border-width: 2px;
+	border-color: grey;
+	border-style: solid;
+	margin:  1em;
+	padding: 1em;
+}
+
+.function {
+	border-width: 2px;
+	border-color: grey;
+	border-style: solid;
+	margin:  1em;
+	padding: 1em;
+}
+
+.class {
+	border-width: 2px;
+	border-color: grey;
+	border-style: solid;
+	margin:  1em;
+	padding: 1em;
+}
+
+
+.sig-paren::before {
+	content: "\a";
+	white-space: pre;
+}
+
+.sig-param::before {
+	content: "\a    ";
+	white-space: pre;
+}
+
+.sig {
+	font-family: 'Consolas', 'Menlo', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace;
+	font-size: small;
+	background: linen;
+	padding: 1em;
+	border-radius: 1em;
+	border-color: black;
+	border-style: solid;
+	border-width: 1px;
+	margin-bottom: 2em;
+}
+
+.n:first-of-type {
+	font-weight: bold;
+}

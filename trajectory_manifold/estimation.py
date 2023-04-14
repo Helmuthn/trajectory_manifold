@@ -1,4 +1,5 @@
 """This module includes functions for statistical estimation"""
+
 from typing import Callable
 from jaxtyping import Float, Array
 from jax import jit

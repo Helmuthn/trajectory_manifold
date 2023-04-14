@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.abspath('.'))
 print(os.path.abspath('.'))
 
 from trajectory_manifold.examples import LinearVectorField
-from trajectory_manifold.main import system_pushforward_weight
+from trajectory_manifold.manifold import system_pushforward_weight
 import jax.numpy as jnp
 from jax import jit
 import timeit

@@ -28,7 +28,27 @@ exclude_patterns = []
 
 html_theme = 'alabaster'
 html_static_path = ['_static']
+html_theme_options = {
+    'github_user': 'Helmuthn',
+    'github_repo': 'trajectory_manifold',
+    'description': 'Statistically Rigorous ODE Forecasting',
+    'fixed_sidebar': True,
+    'sidebar_collapse': False,
+    'page_width': '80rem',
+    'font_size': '1em',
+}
 
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+        'searchbox.html'
+    ]
+}
+
+html_css_files = [
+    'css/custom.css',
+]
 
 # Add module to path
 import sys
