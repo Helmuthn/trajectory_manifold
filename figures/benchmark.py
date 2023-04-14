@@ -1,11 +1,11 @@
-from trajectory_manifold.examples import LinearVectorField
+from trajectory_manifold.examples import linear_vector_field
 from trajectory_manifold.manifold import system_pushforward_weight
 import jax.numpy as jnp
 from jax import jit
 import timeit
 
 
-vector_field = LinearVectorField(jnp.ones((2,2)))
+vector_field = linear_vector_field(jnp.ones((2,2)))
 initial_condition = jnp.ones(2)
 
 @jit
