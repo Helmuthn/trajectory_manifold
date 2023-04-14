@@ -5,8 +5,20 @@ Usage
 Installation
 ------------
 
-Installation is to come later. This code will eventually be turned into a 
-package to be installed with pip.
+This project is not yet published on pypi.
+
+For now, clone the repository with::
+
+    git clone https://github.com/Helmuthn/trajectory_manifold.git
+
+then ``cd`` into the directory and install with::
+
+    pip install .
+
+This project depends on `jax 0.4.3+ <https://github.com/google/jax>`_, `diffrax 0.3.0+ <https://github.com/patrick-kidger/diffrax>`_, and `jaxtyping <https://github.com/google/jaxtyping>`_.
+
+Note that jax installation is a bit more specialized and requires selection
+dependent on your particular system. Thus, it is advised that you install it before this package.
 
 Quick Start 
 -----------
