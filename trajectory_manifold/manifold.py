@@ -95,9 +95,6 @@ def system_sensitivity(
 
     return jnp.moveaxis(sensitivity, 2, 0)
 
-    sensitivity = jacrev(diffeq_solution)(initial_condition)
-
-
 @partial(jit, static_argnames=['vector_field', 'time_horizon'])
 def system_pushforward_weight(
     vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
