@@ -71,11 +71,11 @@ def state_posterior(
     observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
     state_prior: Callable[[Float[Array, " dim"]], float],
 ) -> Callable[[Float[Array, " dim"]], float]:
-    """Constructs a likelihood function for a set of observations of a system.
+    """Constructs a posterior distribution for the initial state of the system.
     
     Given a representation of a differential equation, a set of observation 
     times and an observation likelihood function dependent on the state, 
-    construct a likelihood function jointly over all observations.
+    construct a posterior distribution jointly over all observations.
     
     Args:
         vector_field: Governing differential equation mapping the current state
@@ -110,13 +110,13 @@ def trajectory_posterior(
     observation_times: Float[Array, " timesteps"],
     observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
     state_prior: Callable[[Float[Array, " dim"]], float],
-    time_horizon
+    time_interval: tuple[float, float],
 ) -> Callable[[Float[Array, " dim"]], float]:
-    """Constructs a likelihood function for a set of observations of a system.
+    """Constructs a posterior distribution for system trajectories.
     
     Given a representation of a differential equation, a set of observation 
     times and an observation likelihood function dependent on the state, 
-    construct a likelihood function jointly over all observations.
+    construct a posterior distribution jointly over all observations.
     
     Args:
         vector_field: Governing differential equation mapping the current state
@@ -127,10 +127,12 @@ def trajectory_posterior(
           observations to the likelihood.
         state_prior: A function representing the prior distribution of the
           state of the system at the initial observation time.
+        time_interval: Time interval for the trajectory manifold in the form
+          (initial time, final time).
 
     Returns:
         A function mapping the state at the initial observation time to the 
-        likelihood of the observation.
+        posterior distribution of the observation.
     """
     posterior = state_posterior(vector_field,
                                 observations,
@@ -140,7 +142,7 @@ def trajectory_posterior(
     
     def weight(initial_condition):
         return system_pushforward_weight(vector_field,
-                                         time_horizon,
+                                         time_interval,
                                          initial_condition)
       
     return posterior
