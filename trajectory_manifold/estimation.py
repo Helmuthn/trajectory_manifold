@@ -3,7 +3,7 @@
 from typing import Callable
 from jaxtyping import Float, Array
 from jax import jit
-from manifold import system_pushforward_weight
+from .manifold import system_pushforward_weight
 
 def ML_estimation_state(
     vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
