@@ -15,7 +15,7 @@ class Test_system_sensitivity:
     params = SolverParameters(solver=Tsit5(),
                               relative_tolerance=1e-5,
                               absolute_tolerance=1e-5,
-                              time_horizon=1,
+                              time_interval=(0.0,1.0),
                               step_size=0.1)
 
     def test_dimensions(self):
@@ -41,10 +41,10 @@ class Test_system_pushforward_weight:
     def test_linear(self):
         dynamics = jnp.asarray([[-1.0, 0.0],[0.0, 1.0]])
         vector_field = linear_vector_field(dynamics)
-        time_horizon=1
+        time_interval=(0.0,1.0)
         initial_condition = jnp.asarray([1.0, 1.0])
         weight = system_pushforward_weight(vector_field,
-                                           time_horizon,
+                                           time_interval,
                                            initial_condition)
         truth = sqrt(0.25 * (1 - exp(-2)) * (exp(2) - 1))
         assert abs(weight - truth) < 0.1

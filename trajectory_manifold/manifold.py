@@ -30,14 +30,14 @@ class SolverParameters(NamedTuple):
         relative_tolerance: Relative tolerance for the ODE solution
         absolute_tolerance: Absolute tolerance for the ODE solution
         step_size: Output mesh size. Note: Does not impact internal computations.
-        time_horizon: Length of the solution in seconds.
+        time_interval: tuple of (initial time, final time)
         solver: The particular ODE solver to use.
     """
 
     relative_tolerance: float
     absolute_tolerance: float
     step_size: float
-    time_horizon: float
+    time_interval: tuple[float, float]
     solver: AbstractSolver
 
 
@@ -69,8 +69,8 @@ def system_sensitivity(
 
     term = ODETerm(vector_field)
     solver = parameters.solver
-    timesteps = jnp.arange(0, 
-                           parameters.time_horizon + parameters.step_size, 
+    timesteps = jnp.arange(parameters.time_interval[0], 
+                           parameters.time_interval[1] + parameters.step_size, 
                            step=parameters.step_size)
 
     saveat = SaveAt(ts = timesteps)
@@ -84,8 +84,8 @@ def system_sensitivity(
         """Returns the solution to the differential equation."""
         return diffeqsolve(term,
                            solver,
-                           t0 = 0,
-                           t1 = parameters.time_horizon,
+                           t0 = parameters.time_interval[0],
+                           t1 = parameters.time_interval[1],
                            dt0 = 0.1,
                            saveat = saveat,
                            stepsize_controller = stepsize_controller,
@@ -95,10 +95,10 @@ def system_sensitivity(
 
     return jnp.moveaxis(sensitivity, 2, 0)
 
-@partial(jit, static_argnames=['vector_field', 'time_horizon'])
+@partial(jit, static_argnames=['vector_field', 'time_interval'])
 def system_pushforward_weight(
     vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
-    time_horizon: Float, 
+    time_interval: tuple[float, float], 
     initial_condition: Float[Array, " dim"],
 ) -> Float:
     """Computes the pushforward weight for a given initial condition.
@@ -110,7 +110,8 @@ def system_pushforward_weight(
     Args:
         vector_field: Governing differential equation mapping the current state
           to the derivative.
-        time_horizon: Time horizon for the trajectory manifold.
+        time_interval: Time interval for the trajectory manifold in the form
+          (initial time, final time).
         initial_conditon: The position in the statespace to be pushed onto 
           the manifold.
         
@@ -125,7 +126,7 @@ def system_pushforward_weight(
     parameters = SolverParameters(relative_tolerance, 
                                   absolute_tolerance, 
                                   step_size, 
-                                  time_horizon, 
+                                  time_interval, 
                                   solver)
 
     U = system_sensitivity(vector_field, initial_condition, parameters)
@@ -134,10 +135,10 @@ def system_pushforward_weight(
     return jnp.sqrt(abs(jnp.linalg.det(A)))
 
 
-@partial(jit, static_argnames=['vector_field', 'time_horizon'])
+@partial(jit, static_argnames=['vector_field', 'time_interval'])
 def system_pushforward_weight_reweighted(
     vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
-    time_horizon: Float, 
+    time_interval: Float, 
     initial_condition: Float[Array, " dim"],
     step_size: Float,
     kernel: Float[Array, " timesteps dim dim"]
@@ -151,7 +152,7 @@ def system_pushforward_weight_reweighted(
     Args:
         vector_field: Governing differential equation mapping the current state
           to the derivative.
-        time_horizon: Time horizon for the trajectory manifold.
+        time_interval: Time interval for the trajectory manifold.
         initial_conditon: The position in the statespace to be pushed onto 
           the manifold.
         step_size: The step size for the numerical solution of the ODE.
@@ -168,7 +169,7 @@ def system_pushforward_weight_reweighted(
     parameters = SolverParameters(relative_tolerance, 
                                   absolute_tolerance, 
                                   step_size, 
-                                  time_horizon, 
+                                  time_interval, 
                                   solver)
 
     U = system_sensitivity(vector_field, initial_condition, parameters)
