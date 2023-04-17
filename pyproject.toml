@@ -31,5 +31,5 @@ dependencies = [
 
 [project.urls]
 "Homepage" = "https://github.com/helmuthn/trajectory_manifold"
-"documentation" = "https://www.helmuthnaumer.com/trajectory_manifold/"
+"Documentation" = "https://www.helmuthnaumer.com/trajectory_manifold/"
 "Bug Tracker" = "https://github.com/helmuthn/trajectory_manifold/issues"
