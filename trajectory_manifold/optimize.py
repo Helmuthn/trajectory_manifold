@@ -7,6 +7,8 @@ of the solution to the initial conditions.
 """
 from typing import Callable
 
+
+
 def simulated_annealing(
     f: Callable,
     proposal_variable: Callable, # Random variable
@@ -15,3 +17,8 @@ def simulated_annealing(
     """Optimize a given function through simulated annealing."""
     pass 
 
+
+def optimize_gradient(
+    f: Callable,
+):
+    pass

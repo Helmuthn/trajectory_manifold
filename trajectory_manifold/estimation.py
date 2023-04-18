@@ -7,6 +7,7 @@ import jax
 from .manifold import system_pushforward_weight, SolverParameters
 from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
 import jax.numpy as jnp
+from jax.scipy.special import logsumexp
 
 
 def trajectory_likelihood(
@@ -53,7 +54,7 @@ def trajectory_likelihood(
 
         likelihood_v = jax.vmap(observation_likelihood)
 
-        return jnp.prod(likelihood_v(observations, states))
+        return logsumexp(likelihood_v(observations, states))
     
     return likelihood
 
@@ -249,8 +250,10 @@ def ML_estimation_state(
                                        observation_times, 
                                        observation_likelihood)
 
-    likelihood = jit(likelihood) # Maps initial conditions to
+    likelihood = jit(likelihood) # Maps initial conditions to likelihood
+
     # Maximize likelihood
+
     pass 
 
 
