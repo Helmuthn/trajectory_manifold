@@ -3,39 +3,10 @@
 from typing import Callable
 from jaxtyping import Float, Array
 from jax import jit
-from .manifold import system_pushforward_weight
-
-def ML_estimation_state(
-    vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
-    observations: Float[Array, " timesteps dim2"],
-    observation_times: Float[Array, " timesteps"],
-    observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
-) -> Float[Array, " dim"]:
-    """Computes the maximum likelihood estimate of the state of a system.
-    
-    Given a differential equation, a likelihood function for the observations,
-    the set of observations, and the observation times, compute the maximum
-    likelihood estimate of the state of the system at the final observation time.
-
-    Args:
-        vector_field: Governing differential equation mapping the current state
-          to the derivative.
-        observations: An N by K dimensional array of observations.
-        observation_times: An N dimensional array of observation times.
-        observation_likelihood: A function mapping pairs of states and 
-          observations to the likelihood.
-
-    Returns:
-        The maximum likelihood estimate of the final state of the system.
-    """
-    likelihood = trajectory_likelihood(vector_field, 
-                                       observations,
-                                       observation_times, 
-                                       observation_likelihood)
-
-    likelihood = jit(likelihood) # Maps initial conditions to
-    # Maximize likelihood
-    pass 
+import jax
+from .manifold import system_pushforward_weight, SolverParameters
+from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
+import jax.numpy as jnp
 
 
 def trajectory_likelihood(
@@ -43,6 +14,7 @@ def trajectory_likelihood(
     observations: Float[Array, " timesteps dim2"],
     observation_times: Float[Array, " timesteps"],
     observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
+    parameters: SolverParameters,
 ) -> Callable[[Float[Array, " dim"]], float]:
     """Constructs a likelihood function for a set of observations of a system.
     
@@ -62,7 +34,30 @@ def trajectory_likelihood(
         A function mapping the state at the initial observation time to the 
         likelihood of the observation.
     """
-    pass
+
+    def likelihood(state: Float[Array, " dim"]) -> float:
+        term = ODETerm(vector_field)
+        solver = parameters.solver
+        saveat = SaveAt(ts = observation_times)
+        stepsize_controller = PIDController(rtol = parameters.relative_tolerance,
+                                            atol = parameters.absolute_tolerance)
+        
+        states = diffeqsolve(term,
+                             solver,
+                             t0 = parameters.time_interval[0],
+                             t1 = parameters.time_interval[1],
+                             dt0 = 0.1,
+                             saveat = saveat,
+                             stepsize_controller = stepsize_controller,
+                             y0 = state).ys
+
+        likelihood_v = jax.vmap(observation_likelihood)
+
+        return jnp.prod(likelihood_v(observations, states))
+    
+    return likelihood
+
+
 
 def state_posterior(
     vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
@@ -144,8 +139,9 @@ def trajectory_posterior(
         return system_pushforward_weight(vector_field,
                                          time_interval,
                                          initial_condition)
+    
       
-    return posterior
+    return lambda state: posterior(state) * weight(state)
 
 
 def MAP_estimation_state(
@@ -218,6 +214,46 @@ def MAP_estimation_manifold(
     pass 
 
 
+
+
+
+def karcher_mean_estimation():
+    pass
+
+
+def ML_estimation_state(
+    vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
+    observations: Float[Array, " timesteps dim2"],
+    observation_times: Float[Array, " timesteps"],
+    observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
+) -> Float[Array, " dim"]:
+    """Computes the maximum likelihood estimate of the state of a system.
+    
+    Given a differential equation, a likelihood function for the observations,
+    the set of observations, and the observation times, compute the maximum
+    likelihood estimate of the state of the system at the final observation time.
+
+    Args:
+        vector_field: Governing differential equation mapping the current state
+          to the derivative.
+        observations: An N by K dimensional array of observations.
+        observation_times: An N dimensional array of observation times.
+        observation_likelihood: A function mapping pairs of states and 
+          observations to the likelihood.
+
+    Returns:
+        The maximum likelihood estimate of the final state of the system.
+    """
+    likelihood = trajectory_likelihood(vector_field, 
+                                       observations,
+                                       observation_times, 
+                                       observation_likelihood)
+
+    likelihood = jit(likelihood) # Maps initial conditions to
+    # Maximize likelihood
+    pass 
+
+
 def MMSE_estimation_state(
     vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
     observations: Float[Array, " timesteps dim2"],
@@ -279,8 +315,4 @@ def MMSE_ambient_estimation(
         The MMSE estimate of the final state of the system on the trajectory 
         manifold.
     """
-    pass
-
-
-def karcher_mean_estimation():
     pass
