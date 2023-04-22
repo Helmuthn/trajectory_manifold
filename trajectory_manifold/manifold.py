@@ -11,7 +11,7 @@ import jax.numpy as jnp
 from jaxtyping import Float, Array, PyTree
 from typing import Callable
 
-from diffrax import AbstractSolver, Tsit5
+from diffrax import AbstractSolver, Tsit5, Heun
 from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
 
 from functools import partial
@@ -32,6 +32,7 @@ class SolverParameters(NamedTuple):
         step_size: Output mesh size. Note: Does not impact internal computations.
         time_interval: tuple of (initial time, final time)
         solver: The particular ODE solver to use.
+        max_steps: max steps for the solver
     """
 
     relative_tolerance: float
@@ -39,6 +40,7 @@ class SolverParameters(NamedTuple):
     step_size: float
     time_interval: tuple[float, float]
     solver: AbstractSolver
+    max_steps: int
 
 
 @partial(jit, static_argnames=['vector_field', 'parameters'])
@@ -89,7 +91,8 @@ def system_sensitivity(
                            dt0 = 0.1,
                            saveat = saveat,
                            stepsize_controller = stepsize_controller,
-                           y0 = x0).ys
+                           y0 = x0,
+                           max_steps=parameters.max_steps).ys
 
     sensitivity = jacrev(diffeq_solution)(initial_condition)
 
@@ -121,13 +124,15 @@ def system_pushforward_weight(
 
     absolute_tolerance = 1e-4
     relative_tolerance = 1e-4
+    max_steps = 16**4
     step_size = 0.01
-    solver = Tsit5()
+    solver = Heun()
     parameters = SolverParameters(relative_tolerance, 
                                   absolute_tolerance, 
                                   step_size, 
                                   time_interval, 
-                                  solver)
+                                  solver,
+                                  max_steps)
 
     U = system_sensitivity(vector_field, initial_condition, parameters)
     A = trapezoidal_correlation(U, step_size)
@@ -170,7 +175,8 @@ def system_pushforward_weight_reweighted(
                                   absolute_tolerance, 
                                   step_size, 
                                   time_interval, 
-                                  solver)
+                                  solver,
+                                  16**4)
 
     U = system_sensitivity(vector_field, initial_condition, parameters)
     A = trapezoidal_correlation_weighted(U, step_size, kernel)
