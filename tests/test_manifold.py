@@ -16,7 +16,8 @@ class Test_system_sensitivity:
                               relative_tolerance=1e-5,
                               absolute_tolerance=1e-5,
                               time_interval=(0.0,1.0),
-                              step_size=0.1)
+                              step_size=0.1,
+                              max_steps=100)
 
     def test_dimensions(self):
         dynamics = jnp.asarray([[-1.0, 0.0],[0.0, 1.0]])
