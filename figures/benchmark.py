@@ -10,7 +10,7 @@ initial_condition = jnp.ones(2)
 
 @jit
 def testfunc(x):
-    return system_pushforward_weight(vector_field, 1, x)
+    return system_pushforward_weight(vector_field, (0, 1), x)
 
 start_time = timeit.default_timer()
 for i in range(1000):
