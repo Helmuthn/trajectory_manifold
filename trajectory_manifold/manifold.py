@@ -122,8 +122,8 @@ def system_pushforward_weight(
         The weight required to push a density onto the trajectory manifold.
     """
 
-    absolute_tolerance = 1e-4
-    relative_tolerance = 1e-4
+    absolute_tolerance = 1e-2
+    relative_tolerance = 1e-2
     max_steps = 16**4
     step_size = 0.01
     solver = Heun()
