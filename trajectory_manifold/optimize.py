@@ -21,7 +21,7 @@ def simulated_annealing(
 
 
 def zero_order_gradient_estimate(
-        f: Callable[[Float[Array, " dim, batch_size"]], Float[Array, " batch_size"]],
+        f: Callable[[Float[Array, " dim batch_size"]], Float[Array, " batch_size"]],
         x: Float[Array, " dim"],
         smoothing: float,
         batch_size: int,
