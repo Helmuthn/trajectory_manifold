@@ -60,6 +60,32 @@ def trapezoidal_inner_product(
     
 
 @jit
+def trapezoidal_matrix_product(
+    X: Float[Array, " functions1 timesteps dim"],
+    Y: Float[Array, " functions2 timesteps dim"],
+    step_size: Float,
+) -> Float[Array, " functions1 functions2"]:
+    """Computes the product of two matrices where rows represent functions.
+    
+    Given two matrices, `X` and `Y`, such that the first index indicates
+    a chosen function, computes `X @ Y.T` based on the trapezoidal rule for 
+    integration.
+    
+    Args:
+        X: 
+        Y: 
+        step_size: 
+
+    Returns:
+        The result of the generalized matrix-matrix product.
+    """
+    vv = lambda x, y: trapezoidal_inner_product(x, y, step_size)
+    mv = vmap(vv, (0, None), 0)
+    mm = vmap(mv, (None, 0), 1)
+    return mm(X, Y)
+    
+
+@jit
 def trapezoidal_inner_product_weighted(
     x: Float[Array, " timesteps dim"], 
     y: Float[Array, " timesteps dim"], 

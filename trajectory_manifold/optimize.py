@@ -9,6 +9,8 @@ from typing import Callable
 from jaxtyping import Float, Array
 import jax.numpy as jnp
 from jax import random
+from .manifold import system_sensitivity_and_solution
+from .helpers import trapezoidal_matrix_product
 
 
 def simulated_annealing(
@@ -20,12 +22,42 @@ def simulated_annealing(
     pass 
 
 
+
+def distance_gradient(
+    initial_condition: Float[Array, " dim"],
+    vector_field,
+    trajectory: Float[Array, " dim dim2"],
+    params,
+) -> Float[Array, " dim"]:
+    """Computes the gradient of the squared distance to a chosen trajectory.
+    
+    Computes the gradient in the trajectory space before pulling it back
+    into the state-space.
+
+    Args:
+        initial_condition:
+        vector_field:
+        trajectory:
+        params:
+    
+    Returns:
+        The gradient of the distance to a function"""
+    sensitivity, solution = system_sensitivity_and_solution(vector_field,
+                                                            initial_condition,
+                                                            params)
+    gradient_ambient = solution - trajectory
+    gradient_statespace = trapezoidal_matrix_product(gradient_ambient[None, :, :], 
+                                                     sensitivity,
+                                                     params.step_size)
+    return gradient_statespace
+    
+
 def zero_order_gradient_estimate(
-        f: Callable[[Float[Array, " dim batch_size"]], Float[Array, " batch_size"]],
-        x: Float[Array, " dim"],
-        smoothing: float,
-        batch_size: int,
-        key: random.KeyArray,
+    f: Callable[[Float[Array, " dim batch_size"]], Float[Array, " batch_size"]],
+    x: Float[Array, " dim"],
+    smoothing: float,
+    batch_size: int,
+    key: random.KeyArray,
 ) -> Float[Array, " dim"]:
     """Construct a zero-order estimate of the gradient of a function.
     
@@ -49,6 +81,7 @@ def zero_order_gradient_estimate(
 
     Notes:
         For more information, see 
+
         S. Liu, P. -Y. Chen, B. Kailkhura, G. Zhang, A. O. Hero III and 
         P. K. Varshney, "A Primer on Zeroth-Order Optimization in Signal 
         Processing and Machine Learning: Principals, Recent Advances, 

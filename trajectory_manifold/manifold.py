@@ -44,6 +44,66 @@ class SolverParameters(NamedTuple):
 
 
 @partial(jit, static_argnames=['vector_field', 'parameters'])
+def system_sensitivity_and_solution(
+    vector_field: Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
+    initial_condition: Float[Array, " dim"],
+    parameters: SolverParameters,
+) -> Float[Array, " dim timesteps dim"]:
+    """Computes the differential equation sensitivity to the initial conditions.
+    
+    Given a differential equation, initial condition, and desired time horizon,
+    computes the Jacobian of the transformation from the initial condition
+    to the Riemannian manifold of valid trajectories. The Jacobian is expressed
+    in the ambient space of square integrable functions.
+    
+    Args:
+        vector_field: Governing differential equation mapping the current state
+          to the derivative.
+        initial_condition: The position in the statespace to be pushed onto 
+          the manifold.
+        parameters: The set of parameters for the ODE solver.
+    
+    Returns:
+        `(sensitivity, solution)`
+
+        sensitivity: A matrix where each row represents the sensitivity of the 
+          system solution to a perturbation along some element of an orthonormal 
+          basis of the state space.
+        solution: A matrix representing the corresponding solution of the ODE
+    """
+
+    term = ODETerm(vector_field)
+    solver = parameters.solver
+    timesteps = jnp.arange(parameters.time_interval[0], 
+                           parameters.time_interval[1] + parameters.step_size, 
+                           step=parameters.step_size)
+
+    saveat = SaveAt(ts = timesteps)
+    stepsize_controller = PIDController(rtol = parameters.relative_tolerance,
+                                        atol = parameters.absolute_tolerance)
+
+    @jit
+    def diffeq_solution(
+        x0: Float[Array, " dim"],
+    ) -> Float[Array, " timesteps dim"]:
+        """Returns the solution to the differential equation."""
+        return diffeqsolve(term,
+                           solver,
+                           t0 = parameters.time_interval[0],
+                           t1 = parameters.time_interval[1],
+                           dt0 = 0.1,
+                           saveat = saveat,
+                           stepsize_controller = stepsize_controller,
+                           y0 = x0,
+                           max_steps=parameters.max_steps).ys
+
+    solution = diffeq_solution(initial_condition)
+    sensitivity = jacrev(diffeq_solution)(initial_condition)
+
+    return jnp.moveaxis(sensitivity, 2, 0), solution
+
+
+@partial(jit, static_argnames=['vector_field', 'parameters'])
 def system_sensitivity(
     vector_field: Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     initial_condition: Float[Array, " dim"],
