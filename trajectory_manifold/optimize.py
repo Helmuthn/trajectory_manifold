@@ -6,10 +6,10 @@ posterior distribution of trajectories on the second-order sensitivity
 of the solution to the initial conditions.
 """
 from typing import Callable
-from jaxtyping import Float, Array
+from jaxtyping import Float, Array, PyTree
 import jax.numpy as jnp
 from jax import random
-from .manifold import system_sensitivity_and_solution
+from .manifold import system_sensitivity_and_solution, SolverParameters
 from .helpers import trapezoidal_matrix_product
 
 
@@ -25,20 +25,24 @@ def simulated_annealing(
 
 def distance_gradient(
     initial_condition: Float[Array, " dim"],
-    vector_field,
+    vector_field: Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]],
     trajectory: Float[Array, " dim dim2"],
-    params,
+    params: SolverParameters,
 ) -> Float[Array, " dim"]:
     """Computes the gradient of the squared distance to a chosen trajectory.
     
-    Computes the gradient in the trajectory space before pulling it back
-    into the state-space.
+    Computes the pullback along the transformation from initial conditions
+    to system trajectories of the gradient of the squared distance from
+    a given sampled trajectory in the ambient space.
+
+    The gradient in the trajectory manifold is the projection of the gradient
+    in the ambient space onto the tangent space of the manifold.
 
     Args:
-        initial_condition:
-        vector_field:
-        trajectory:
-        params:
+        initial_condition: The initial condition around which to linearize.
+        vector_field: Vector field defining the differential equation.
+        trajectory: A sampled function from which the distance is computed.
+        params: Parameters for the ODE solvers.
     
     Returns:
         The gradient of the distance to a function"""
@@ -94,8 +98,3 @@ def zero_order_gradient_estimate(
     estimates = magnitudes * samples 
     return jnp.sum(estimates, axis=1) / smoothing / batch_size
 
-
-def optimize_gradient(
-    f: Callable,
-):
-    pass
