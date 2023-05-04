@@ -69,9 +69,9 @@ states = diffeqsolve(term,
 key, subkey = random.split(key)
 noise = noise_std*random.normal(subkey, shape=states.shape)
 observations = states + noise
-observation_times = observation_times[:30]
-observations = observations[:30,:]
-subsample = 6
+observation_times = observation_times[:31]
+observations = observations[:31,:]
+subsample = 3
 
 ## Compute Estimation Functions
 print("Construction Estimates")
@@ -334,6 +334,7 @@ for i in range(2):
         axs[i,j].set_xlim(0,10)
         axs[i,j].set_ylim(0,3.6)
 
+plt.xticks([0,3,6,9])
 fig.text(0.5,0, "Time", ha='center')
 fig.text(0,0.5,"Population",va='center', rotation='vertical')
 fig.set_figwidth(5.5)
