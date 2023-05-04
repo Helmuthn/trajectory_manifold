@@ -500,6 +500,27 @@ This is due to the dependence of the first-order derivative of the
 posterior distribution of trajectories on the second-order sensitivity
 of the solution to the initial conditions.</p>
 <dl class="py function">
+<dt class="sig sig-object py" id="trajectory_manifold.optimize.distance_gradient">
+<span class="sig-prename descclassname"><span class="pre">trajectory_manifold.optimize.</span></span><span class="sig-name descname"><span class="pre">distance_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vector_field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim</span> <span class="pre">dim2'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim'</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#trajectory_manifold.optimize.distance_gradient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the gradient of the squared distance to a chosen trajectory.</p>
+<p>Computes the gradient in the trajectory space before pulling it back
+into the state-space.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>initial_condition</strong> – </p></li>
+<li><p><strong>vector_field</strong> – </p></li>
+<li><p><strong>trajectory</strong> – </p></li>
+<li><p><strong>params</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The gradient of the distance to a function</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="trajectory_manifold.optimize.simulated_annealing">
 <span class="sig-prename descclassname"><span class="pre">trajectory_manifold.optimize.</span></span><span class="sig-name descname"><span class="pre">simulated_annealing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proposal_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#trajectory_manifold.optimize.simulated_annealing" title="Permalink to this definition">¶</a></dt>
 <dd><p>Optimize a given function through simulated annealing.</p>
@@ -531,8 +552,8 @@ ball size for the random samples</p></li>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>For more information, see
-S. Liu, P. -Y. Chen, B. Kailkhura, G. Zhang, A. O. Hero III and
+<p>For more information, see</p>
+<p>S. Liu, P. -Y. Chen, B. Kailkhura, G. Zhang, A. O. Hero III and
 P. K. Varshney, “A Primer on Zeroth-Order Optimization in Signal
 Processing and Machine Learning: Principals, Recent Advances,
 and Applications,” in IEEE Signal Processing Magazine, vol. 37,
@@ -698,6 +719,27 @@ value of the multivariate function at a given timestep.</p></li>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>An approximation of the L2 inner product.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="trajectory_manifold.helpers.trapezoidal_matrix_product">
+<span class="sig-prename descclassname"><span class="pre">trajectory_manifold.helpers.</span></span><span class="sig-name descname"><span class="pre">trapezoidal_matrix_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">functions1</span> <span class="pre">timesteps</span> <span class="pre">dim'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">functions2</span> <span class="pre">timesteps</span> <span class="pre">dim'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">functions1</span> <span class="pre">functions2'</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#trajectory_manifold.helpers.trapezoidal_matrix_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the product of two matrices where rows represent functions.</p>
+<p>Given two matrices, <cite>X</cite> and <cite>Y</cite>, such that the first index indicates
+a chosen function, computes <cite>X &#64; Y.T</cite> based on the trapezoidal rule for
+integration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> – </p></li>
+<li><p><strong>Y</strong> – </p></li>
+<li><p><strong>step_size</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The result of the generalized matrix-matrix product.</p>
 </dd>
 </dl>
 </dd></dl>
