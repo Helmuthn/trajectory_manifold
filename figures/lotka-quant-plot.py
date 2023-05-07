@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+###############################
+##### Read in Data Arrays #####
+###############################
+
 data = np.load("quant_noise_lotka.npz")
 
 noise_power   = data['noise_power']
@@ -46,6 +50,11 @@ t_sup_ML        = data['t_sup_ML']
 t_sup_MMSE_proj = data['t_sup_MMSE_proj']
 t_sup_MMSE_init = data['t_sup_MMSE_init']
 
+
+#####################################
+##### Configure Plotting Fonts  #####
+#####################################
+
 SMALL_SIZE = 11
 MEDIUM_SIZE = SMALL_SIZE
 BIGGER_SIZE = 11
@@ -57,6 +66,11 @@ plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
+
+##############################################
+##### Plot As A Function Of Noise Power  #####
+##############################################
+
 fig, axs = plt.subplots(2,2, sharex=True)
 
 fig.set_figwidth(5.5)
@@ -67,7 +81,6 @@ axs[1,0].plot(noise_power, mae_MAP, label="MAP Trajectory")
 axs[1,0].plot(noise_power, mae_ML, label="ML/MAP Initial Condition")
 axs[1,0].plot(noise_power, mae_MMSE_init, label="MMSE Initial Condition")
 axs[1,0].set_xscale('log')
-#axs[1,0].set_yscale('log')
 axs[1,0].set_title("Mean Absolute Error")
 axs[1,0].set_xlim(0.01,10)
 
@@ -77,7 +90,6 @@ axs[1,1].plot(noise_power, mse_MAP, label="MAP Trajectory")
 axs[1,1].plot(noise_power, mse_ML, label="ML/MAP Initial Condition")
 axs[1,1].plot(noise_power, mse_MMSE_init, label="MMSE Initial Condition")
 axs[1,1].set_xscale('log')
-#axs[1,1].set_yscale('log')
 axs[1,1].set_title("Mean Squared Error")
 axs[1,1].set_xlim(0.01,10)
 
@@ -87,7 +99,6 @@ axs[0,0].plot(noise_power, sup_MAP, label="MAP Trajectory")
 axs[0,0].plot(noise_power, sup_ML, label="ML/MAP Initial Condition")
 axs[0,0].plot(noise_power, sup_MMSE_init, label="MMSE Initial Condition")
 axs[0,0].set_xscale('log')
-#axs[0,0].set_yscale('log')
 axs[0,0].set_title("Sup Norm")
 axs[0,0].set_xlim(0.01,10)
 
@@ -104,8 +115,12 @@ for i in range(2):
         axs[i,j].grid(True, which='major')
 
 fig.tight_layout()
-fig.show()
+fig.savefig("quantitative_snr.pdf", format="pdf", bbox_inches="tight")
 
+
+##############################################
+##### Plot As A Function Of Time Horizon #####
+##############################################
 
 fig, axs = plt.subplots(2,2, sharex=True)
 
@@ -116,8 +131,6 @@ axs[1,0].plot(time_horizons, t_mae_MMSE_proj, label="MMSE Trajectory, Manifold")
 axs[1,0].plot(time_horizons, t_mae_MAP, label="MAP Trajectory")
 axs[1,0].plot(time_horizons, t_mae_ML, label="ML/MAP Initial Condition")
 axs[1,0].plot(time_horizons, t_mae_MMSE_init, label="MMSE Initial Condition")
-#axs[1,0].set_xscale('log')
-#axs[1,0].set_yscale('log')
 axs[1,0].set_title("Mean Absolute Error")
 axs[1,0].set_xlim(2,30)
 axs[1,0].set_ylim(0,30)
@@ -127,8 +140,6 @@ axs[1,1].plot(time_horizons, t_mse_MMSE_proj, label="MMSE Trajectory, Manifold")
 axs[1,1].plot(time_horizons, t_mse_MAP, label="MAP Trajectory")
 axs[1,1].plot(time_horizons, t_mse_ML, label="ML/MAP Initial Condition")
 axs[1,1].plot(time_horizons, t_mse_MMSE_init, label="MMSE Initial Condition")
-#axs[1,1].set_xscale('log')
-#axs[1,1].set_yscale('log')
 axs[1,1].set_title("Mean Squared Error")
 axs[1,1].set_xlim(2,30)
 axs[1,1].set_ylim(0,30)
@@ -138,8 +149,6 @@ axs[0,0].plot(time_horizons, t_sup_MMSE_proj, label="MMSE Trajectory, Manifold")
 axs[0,0].plot(time_horizons, t_sup_MAP, label="MAP Trajectory")
 axs[0,0].plot(time_horizons, t_sup_ML, label="ML/MAP Initial Condition")
 axs[0,0].plot(time_horizons, t_sup_MMSE_init, label="MMSE Initial Condition")
-#axs[0,0].set_xscale('log')
-#axs[0,0].set_yscale('log')
 axs[0,0].set_title("Sup Norm")
 axs[0,0].set_xlim(2,30)
 
@@ -156,4 +165,5 @@ for i in range(2):
         axs[i,j].grid(True, which='major')
 
 fig.tight_layout()
-fig.show()
+
+fig.savefig("quantitative_horizon.pdf", format="pdf", bbox_inches="tight")
