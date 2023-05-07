@@ -341,7 +341,7 @@ fig.show()
 fig.savefig("quantitative_snr.pdf", format="pdf", bbox_inches="tight")
 
 #%%
-jnp.savez("quant_noise_lorenz.npz", noise_power=noise_power,
+jnp.savez("quant_noise_lotka.npz", noise_power=noise_power,
                                     mse_MMSE = jnp.array(mse_MMSE),
                                     mae_MMSE = jnp.array(mae_MMSE),
                                     sup_MMSE = jnp.array(sup_MMSE),
@@ -633,7 +633,7 @@ fig.show()
 fig.savefig("quantitative_horizon.pdf", format="pdf", bbox_inches="tight")
 # %%
 
-jnp.savez("quant_horizon_lorenz.npz", time_horizons=time_horizons,
+jnp.savez("quant_horizon_lotka.npz", time_horizons=time_horizons,
                                     t_mse_MMSE      = jnp.array(t_mse_MMSE),
                                     t_mae_MMSE      = jnp.array(t_mae_MMSE),
                                     t_sup_MMSE      = jnp.array(t_sup_MMSE),
