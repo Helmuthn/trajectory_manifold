@@ -98,3 +98,35 @@ def zero_order_gradient_estimate(
     estimates = magnitudes * samples 
     return jnp.sum(estimates, axis=1) / smoothing / batch_size
 
+
+#def project_onto_manifold(estimate):
+#    start_learner_rate = 1e-1
+#    optimizer = optax.adam(start_learner_rate)
+#
+#    params = jnp.ones(2) * .4
+#    opt_state = optimizer.init(params)
+#
+#    g = lambda init: distance_gradient(init,
+#                                       vector_field,
+#                                       estimate,
+#                                       parameters)
+#    g = jit(g)
+#
+#    step_count = 100
+#    for i in tqdm(range(step_count)):
+#        grads = g(params)
+#        updates, opt_state = optimizer.update(grads, opt_state)
+#        params = optax.apply_updates(params, updates)[0]
+#
+#    return params
+
+
+def grid_optimum(grid, x, y, upper = True):
+    if upper:
+        peak = jnp.argmax(grid)
+    else:
+        peak = jnp.argmin(grid)
+
+    peak_x = x[peak % x.shape[0]]
+    peak_y = y[peak // y.shape[0]]
+    return jnp.stack([peak_x, peak_y])
