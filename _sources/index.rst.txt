@@ -9,7 +9,7 @@ Trajectory Manifold
 This is a Python library for doing statistics on the manifold of trajectories
 implicitly defined by a differential equation.
 
-The library can be found at `https://github.com/Helmuthn/trajectory_manifold <https://github.com/Helmuthn/trajectory_manifold>`
+The library can be found at `https://github.com/Helmuthn/trajectory_manifold <https://github.com/Helmuthn/trajectory_manifold>`_
 
 .. note::
 
