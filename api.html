@@ -360,6 +360,90 @@ posterior distribution of the observation.</p>
 <p>The module <code class="docutils literal notranslate"><span class="pre">trajectory_manifold.optimize</span></code> contains a couple of optimization
 procedures for the estimators.
 The main one of which is an implementation of a simulated annealing optimizer.</p>
+<span class="target" id="module-trajectory_manifold.optimize"></span><p>This module contains functions useful for optimization.</p>
+<p>This module contains useful functions for optimization on the
+trajectory manifold. It enables the computation of the pullback
+of gradients into the ambient space, as well as helper functions
+for grid-based methods.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="trajectory_manifold.optimize.distance_gradient">
+<span class="sig-prename descclassname"><span class="pre">trajectory_manifold.optimize.</span></span><span class="sig-name descname"><span class="pre">distance_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vector_field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">PyTree</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim</span> <span class="pre">dim2'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#trajectory_manifold.manifold.trajectory_manifold.manifold.SolverParameters" title="trajectory_manifold.manifold.trajectory_manifold.manifold.SolverParameters"><span class="pre">SolverParameters</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim'</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#trajectory_manifold.optimize.distance_gradient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the gradient of the squared distance to a chosen trajectory.</p>
+<p>Computes the pullback along the transformation from initial conditions
+to system trajectories of the gradient of the squared distance from
+a given sampled trajectory in the ambient space.</p>
+<p>The gradient in the trajectory manifold is the projection of the gradient
+in the ambient space onto the tangent space of the manifold.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>initial_condition</strong> – The initial condition around which to linearize.</p></li>
+<li><p><strong>vector_field</strong> – Vector field defining the differential equation.</p></li>
+<li><p><strong>trajectory</strong> – A sampled function from which the distance is computed.</p></li>
+<li><p><strong>params</strong> – Parameters for the ODE solvers.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The gradient of the distance to a function</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="trajectory_manifold.optimize.grid_optimum">
+<span class="sig-prename descclassname"><span class="pre">trajectory_manifold.optimize.</span></span><span class="sig-name descname"><span class="pre">grid_optimum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim1</span> <span class="pre">dim2'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim1'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim2'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'2'</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#trajectory_manifold.optimize.grid_optimum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the optimal value in a grid.</p>
+<p>Given a matrix of values representing some objective function on a
+grid, compute the point with the maximum or minimum value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid</strong> – Sampled function evaluations</p></li>
+<li><p><strong>x</strong> – Values in the first index</p></li>
+<li><p><strong>y</strong> – Values for the second index</p></li>
+<li><p><strong>upper</strong> – Maximize if <cite>True</cite>, Minimize if <cite>False</cite></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An array containing the x, y coordininate of the optimal grid point.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="trajectory_manifold.optimize.zero_order_gradient_estimate">
+<span class="sig-prename descclassname"><span class="pre">trajectory_manifold.optimize.</span></span><span class="sig-name descname"><span class="pre">zero_order_gradient_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim</span> <span class="pre">batch_size'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">batch_size'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PRNGKeyArray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Float</span><span class="p"><span class="pre">[</span></span><span class="pre">Array</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'</span> <span class="pre">dim'</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#trajectory_manifold.optimize.zero_order_gradient_estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a zero-order estimate of the gradient of a function.</p>
+<p>Constructs an approximation of the gradient of a given function through
+a Monte Carlo method. Generates <cite>batch_size</cite> samples of Gaussian perturbations
+from the chosen point, and averages the estimates constructed by finite-difference
+approximations.
+Includes a smoothing factor which adjusts the variance of the Gaussian
+samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> – A function of which the gradient is to be computed.</p></li>
+<li><p><strong>x</strong> – The point at which the gradient is computed</p></li>
+<li><p><strong>smoothing</strong> – Smoothing factor in the gradient computation, determines the
+ball size for the random samples</p></li>
+<li><p><strong>batch_size</strong> – The number of random points used in the gradient estimate.</p></li>
+<li><p><strong>key</strong> – PRNG key for Jax RNG functioanlity</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An approximation of the gradient of f at x</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For more information, see</p>
+<p>S. Liu, P. -Y. Chen, B. Kailkhura, G. Zhang, A. O. Hero III and
+P. K. Varshney, “A Primer on Zeroth-Order Optimization in Signal
+Processing and Machine Learning: Principals, Recent Advances,
+and Applications,” in IEEE Signal Processing Magazine, vol. 37,
+no. 5, pp. 43-54, Sept. 2020, doi: 10.1109/MSP.2020.3003837.</p>
+</dd></dl>
+
 </section>
 <section id="helpers">
 <h2>Helpers<a class="headerlink" href="#helpers" title="Permalink to this heading">¶</a></h2>
