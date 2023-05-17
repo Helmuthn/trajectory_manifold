@@ -75,7 +75,7 @@ def system_sensitivity_and_solution(
     term = ODETerm(vector_field)
     solver = parameters.solver
     timesteps = jnp.arange(parameters.time_interval[0], 
-                           parameters.time_interval[1] + parameters.step_size, 
+                           parameters.time_interval[1], 
                            step=parameters.step_size)
 
     saveat = SaveAt(ts = timesteps)
