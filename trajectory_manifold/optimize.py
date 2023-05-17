@@ -95,7 +95,7 @@ def grid_optimum(
         x: Float[Array, " dim1"], 
         y: Float[Array, " dim2"], 
         upper: bool = True,
-    ) -> Float[Array, 2]:
+    ) -> Float[Array, "2"]:
     """ Compute the optimal value in a grid.
 
     Given a matrix of values representing some objective function on a
