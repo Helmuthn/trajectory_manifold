@@ -13,11 +13,10 @@ The library can be found at `https://github.com/Helmuthn/trajectory_manifold <ht
 
 .. note::
 
-   This project is under development for an anticipated paper submission.
+   This project contains the code to reproduce the figures for a paper
+   currently under review.
 
-The key feature of this library is the ability to push densities
-through the implicit transformation between the state space of the system
-and the trajectory manifold.
+
 
 
 
