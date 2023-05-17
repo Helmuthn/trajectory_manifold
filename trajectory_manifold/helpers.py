@@ -72,9 +72,11 @@ def trapezoidal_matrix_product(
     integration.
     
     Args:
-        X: 
-        Y: 
-        step_size: 
+        X: An M by N by K array of N samples of each of M functions
+          taking values in a K-dimensional space. 
+        Y: An M by N by K array of N samples of each of M functions
+          taking values in a K-dimensional space. 
+        step_size: Spacing between sample points in the functions.
 
     Returns:
         The result of the generalized matrix-matrix product.
@@ -173,7 +175,7 @@ def trapezoidal_correlation(
     trapezoidal integration scheme. 
     
     Args:
-        U: M by N by K matrix representing N samples each of M functions that
+        U: M by N by K array representing N samples each of M functions that
           take values in a K-dimensional space.
         step_size: Spacing between sample points in the functions.
     

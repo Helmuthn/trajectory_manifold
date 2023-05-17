@@ -1,9 +1,9 @@
-"""This module is for MCMC optimization methods.
+"""This module contains functions useful for optimization.
 
-The main approach in this module is to use simulated annealing.
-This is due to the dependence of the first-order derivative of the
-posterior distribution of trajectories on the second-order sensitivity
-of the solution to the initial conditions.
+This module contains useful functions for optimization on the
+trajectory manifold. It enables the computation of the pullback
+of gradients into the ambient space, as well as helper functions
+for grid-based methods.
 """
 from typing import Callable
 from jaxtyping import Float, Array, PyTree
@@ -11,15 +11,6 @@ import jax.numpy as jnp
 from jax import random
 from .manifold import system_sensitivity_and_solution, SolverParameters
 from .helpers import trapezoidal_matrix_product
-
-
-def simulated_annealing(
-    f: Callable,
-    proposal_variable: Callable, # Random variable
-    sample_count: int,
-):
-    """Optimize a given function through simulated annealing."""
-    pass 
 
 
 
@@ -99,29 +90,26 @@ def zero_order_gradient_estimate(
     return jnp.sum(estimates, axis=1) / smoothing / batch_size
 
 
-#def project_onto_manifold(estimate):
-#    start_learner_rate = 1e-1
-#    optimizer = optax.adam(start_learner_rate)
-#
-#    params = jnp.ones(2) * .4
-#    opt_state = optimizer.init(params)
-#
-#    g = lambda init: distance_gradient(init,
-#                                       vector_field,
-#                                       estimate,
-#                                       parameters)
-#    g = jit(g)
-#
-#    step_count = 100
-#    for i in tqdm(range(step_count)):
-#        grads = g(params)
-#        updates, opt_state = optimizer.update(grads, opt_state)
-#        params = optax.apply_updates(params, updates)[0]
-#
-#    return params
+def grid_optimum(
+        grid: Float[Array, " dim1 dim2"], 
+        x: Float[Array, " dim1"], 
+        y: Float[Array, " dim2"], 
+        upper: bool = True,
+    ) -> Float[Array, 2]:
+    """ Compute the optimal value in a grid.
 
+    Given a matrix of values representing some objective function on a
+    grid, compute the point with the maximum or minimum value.
 
-def grid_optimum(grid, x, y, upper = True):
+    Args:
+        grid: Sampled function evaluations
+        x: Values in the first index
+        y: Values for the second index
+        upper: Maximize if `True`, Minimize if `False`
+
+    Returns:
+        An array containing the x, y coordininate of the optimal grid point.
+    """
     if upper:
         peak = jnp.argmax(grid)
     else:
