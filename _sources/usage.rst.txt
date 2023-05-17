@@ -51,6 +51,7 @@ To do so, we use Jax for random number generation and Diffrax for
 the ODE solvers.
 
 .. code-block:: python
+
     dimension = 2
     noise_std = 1 
 
@@ -89,6 +90,7 @@ the ODE solvers.
 Next, define our likelihood function and prior.
 
 .. code-block:: python
+
     def observation_log_likelihood(observation, state):
         partition = jnp.power(2 * pi, -observations.shape[1]/2.0)
         return jnp.log(partition) -1 * jnp.sum(jnp.square(observation - state))/(2*noise_std**2)

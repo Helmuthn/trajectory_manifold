@@ -122,7 +122,51 @@ ODE solvers.</p>
 <p>We next simulate an observation process.
 To do so, we use Jax for random number generation and Diffrax for
 the ODE solvers.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dimension</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">noise_std</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+<span class="n">key</span><span class="p">,</span> <span class="n">subkey</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<span class="n">true_init</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">subkey</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">dimension</span><span class="p">,))</span> <span class="o">+</span> <span class="n">center</span> <span class="o">-</span> <span class="mi">1</span>
+
+<span class="n">term</span> <span class="o">=</span> <span class="n">ODETerm</span><span class="p">(</span><span class="n">vector_field</span><span class="p">)</span>
+<span class="n">solver</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">solver</span>
+<span class="n">observation_times</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                               <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">parameters</span><span class="o">.</span><span class="n">step_size</span><span class="p">,</span>
+                               <span class="n">step</span><span class="o">=</span><span class="n">parameters</span><span class="o">.</span><span class="n">step_size</span><span class="p">)</span>
+
+<span class="n">saveat</span> <span class="o">=</span> <span class="n">SaveAt</span><span class="p">(</span><span class="n">ts</span> <span class="o">=</span> <span class="n">observation_times</span><span class="p">)</span>
+
+<span class="n">stepsize_controller</span> <span class="o">=</span> <span class="n">PIDController</span><span class="p">(</span><span class="n">rtol</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">relative_tolerance</span><span class="p">,</span>
+                                    <span class="n">atol</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">absolute_tolerance</span><span class="p">)</span>
+
+<span class="n">states</span> <span class="o">=</span> <span class="n">diffeqsolve</span><span class="p">(</span><span class="n">term</span><span class="p">,</span>
+                     <span class="n">solver</span><span class="p">,</span>
+                     <span class="n">t0</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                     <span class="n">t1</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                     <span class="n">dt0</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">step_size</span><span class="p">,</span>
+                     <span class="n">saveat</span> <span class="o">=</span> <span class="n">saveat</span><span class="p">,</span>
+                     <span class="n">stepsize_controller</span> <span class="o">=</span> <span class="n">stepsize_controller</span><span class="p">,</span>
+                     <span class="n">y0</span> <span class="o">=</span> <span class="n">true_init</span><span class="p">)</span><span class="o">.</span><span class="n">ys</span>
+
+
+<span class="n">key</span><span class="p">,</span> <span class="n">subkey</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<span class="n">noise</span> <span class="o">=</span> <span class="n">noise_std</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">subkey</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">states</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">observations</span> <span class="o">=</span> <span class="n">states</span> <span class="o">+</span> <span class="n">noise</span>
+<span class="n">observation_times</span> <span class="o">=</span> <span class="n">observation_times</span><span class="p">[:</span><span class="mi">30</span><span class="p">]</span>
+<span class="n">observations</span> <span class="o">=</span> <span class="n">observations</span><span class="p">[:</span><span class="mi">30</span><span class="p">,:]</span>
+<span class="n">subsample</span> <span class="o">=</span> <span class="mi">6</span>
+</pre></div>
+</div>
 <p>Next, define our likelihood function and prior.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">observation_log_likelihood</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="n">partition</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span><span class="p">,</span> <span class="o">-</span><span class="n">observations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">observation</span> <span class="o">-</span> <span class="n">state</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">noise_std</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">state_log_prior</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 </section>
 
