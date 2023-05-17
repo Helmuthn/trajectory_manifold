@@ -15,6 +15,8 @@ from tqdm.autonotebook import tqdm
 
 from functools import partial
 
+import numpy as onp
+
 ## Setup Problem Specification
 
 vector_field = examples.lotka_volterra_vector_field(1,2,4,2)
@@ -40,6 +42,12 @@ y = npzfile['y']
 weight_matrix = npzfile['weight_matrix']
 weight_matrix = jnp.array(weight_matrix)
 weight_matrix = jnp.reshape(weight_matrix, (x.shape[0], y.shape[0]))
+
+npzfile = jnp.load("lotka-weights-full.npz")
+time_horizons = npzfile['time_horizons']
+full_weight_matrix = npzfile['weight_matrix']
+full_weight_matrix = jnp.array(full_weight_matrix)
+full_weight_matrix = jnp.reshape(full_weight_matrix, (x.shape[0], y.shape[0], time_horizons.shape[0]))
 
 #%%
 subsample = 3
@@ -299,7 +307,7 @@ jnp.savez("quant_noise_lotka.npz", noise_power=noise_power,
 
 # Vary the noise power, compute MSE and MAE
 # Step noise power in log scale
-time_horizons = jnp.arange(2,32,2)
+time_horizons = onp.arange(2,32,2)
 
 key = random.PRNGKey(123)
 
@@ -323,12 +331,13 @@ t_mse_ML   = [0] * time_horizons.shape[0]
 t_mae_ML   = [0] * time_horizons.shape[0]
 t_sup_ML   = [0] * time_horizons.shape[0]
 
-mcmc_samples = 5000
+mcmc_samples = 10000
 std = 1
 
 @jit
 def ll_function(observation, state):
     return observation_log_likelihood(observation, state, std)
+
 
 outer_bar = tqdm(range(len(time_horizons)), desc="Time Horizon")
 inner_bar = tqdm(range(mcmc_samples), leave=False, desc="    MC Step")
@@ -338,7 +347,7 @@ for i, horizon in enumerate(time_horizons):
     parameters = SolverParameters(relative_tolerance = 1e-2,
                                   absolute_tolerance = 1e-2,
                                   step_size = 0.1,
-                                  time_interval = (0,0),
+                                  time_interval = (0, horizon),
                                   solver=Heun(),
                                   max_steps=16**5)
 
@@ -350,6 +359,7 @@ for i, horizon in enumerate(time_horizons):
     distance_mat = square_distance_tensor(solution_set)
 
     sample_grid = jnp.reshape(samples.T, (x.shape[0], y.shape[0], 2))
+    weight_matrix = full_weight_matrix[:,:,i]
 
     for j in range(mcmc_samples):
         # Generate Data
