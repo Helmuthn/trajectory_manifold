@@ -4,8 +4,38 @@ from jax import jit
 from typing import Callable
 from jaxtyping import Array, Float, jaxtyped, PyTree
 
+
 @jaxtyped
 def lorenz_vector_field(
+    sigma: float = 10,
+    rho: float = 28,
+    beta: float = 8.0/3.0
+) -> Callable[[Float, Float[Array, " dim"], any], Float[Array, " dim"]]:
+    """ Returns a function representing the Lorenz system.
+    
+    Args:
+        sigma: Lorenz Parameter
+        rho: Lorenz Parameter
+        beta: Lorenz Parameter
+    
+    Returns:
+        A function representing the vector field for the Lorenz 96 system.
+    """
+    @jit
+    def out(t, y, args):
+        d = jnp.zeros(3)
+
+        d = d.at[0].set(sigma * (y[1] - y[0]))
+        d = d.at[1].set(y[0] * (rho - y[2]) - y[1])
+        d = d.at[2].set(y[0] * y[1] - beta * y[2])
+
+        return d
+
+    return out
+
+
+@jaxtyped
+def lorenz96_vector_field(
     F: float
 ) -> Callable[[Float, Float[Array, " dim"], any], Float[Array, " dim"]]:
     """ Returns a function representing the Lorenz 96 system.
