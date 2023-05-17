@@ -13,6 +13,10 @@ import jax.lax as lax
 
 import numpy as onp
 
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+
 ## Setup Problem Specification
 
 vector_field = examples.lotka_volterra_vector_field(1,2,4,2)
