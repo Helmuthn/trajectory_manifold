@@ -2,7 +2,6 @@
 
 from typing import Callable
 from jaxtyping import Float, Array
-from jax import jit
 import jax
 from .manifold import system_pushforward_weight, SolverParameters
 from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
