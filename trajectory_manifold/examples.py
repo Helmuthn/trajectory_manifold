@@ -10,7 +10,7 @@ def lorenz_vector_field(
     sigma: float = 10,
     rho: float = 28,
     beta: float = 8.0/3.0
-) -> Callable[[Float, Float[Array, " dim"], any], Float[Array, " dim"]]:
+) -> Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]]:
     """ Returns a function representing the Lorenz system.
     
     Args:
@@ -37,7 +37,7 @@ def lorenz_vector_field(
 @jaxtyped
 def lorenz96_vector_field(
     F: float
-) -> Callable[[Float, Float[Array, " dim"], any], Float[Array, " dim"]]:
+) -> Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]]:
     """ Returns a function representing the Lorenz 96 system.
     
     Args:
