@@ -24,15 +24,16 @@ class SolverParameters(NamedTuple):
     """Stores Information for ODE Solvers.
     
     Records the parameters for solving an ODE using Diffrax,
-    including the solver, tolerances, output grid size, and time horizon
+    including the solver, tolerances, output grid size, and time horizon.
     
     Attributes:
-        relative_tolerance: Relative tolerance for the ODE solution
-        absolute_tolerance: Absolute tolerance for the ODE solution
+        relative_tolerance: Relative tolerance for the ODE solution.
+        absolute_tolerance: Absolute tolerance for the ODE solution.
         step_size: Output mesh size. Note: Does not impact internal computations.
-        time_interval: tuple of (initial time, final time)
+        time_interval: Tuple of (initial time, final time). The interval is 
+          inclusive of the initial time, but exclusive of the final time.
         solver: The particular ODE solver to use.
-        max_steps: max steps for the solver
+        max_steps: Max steps for the solver.
     """
 
     relative_tolerance: float
@@ -160,7 +161,7 @@ def system_sensitivity(
 
 @partial(jit, static_argnames=['vector_field', 'time_interval'])
 def system_pushforward_weight(
-    vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
+    vector_field: Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     time_interval: tuple[float, float], 
     initial_condition: Float[Array, " dim"],
 ) -> Float:
@@ -228,15 +229,16 @@ def system_pushforward_weight_reweighted(
         The weight required to push a density onto the trajectory manifold.
     """
 
-    absolute_tolerance = 1e-4
-    relative_tolerance = 1e-4
+    absolute_tolerance = 1e-2
+    relative_tolerance = 1e-2
+    max_steps = 16**4
     solver = Tsit5()
     parameters = SolverParameters(relative_tolerance, 
                                   absolute_tolerance, 
                                   step_size, 
                                   time_interval, 
                                   solver,
-                                  16**4)
+                                  max_steps)
 
     U = system_sensitivity(vector_field, initial_condition, parameters)
     A = trapezoidal_correlation_weighted(U, step_size, kernel)
