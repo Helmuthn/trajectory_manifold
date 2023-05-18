@@ -51,6 +51,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Quick Start</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#problem-setup">Problem Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#generate-observations">Generate Observations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#state-posterior">State Posterior</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#importance-sampling">Importance Sampling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#projection">Projection</a></li>
@@ -193,6 +194,9 @@ and their log prior.</p>
     <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
 </pre></div>
 </div>
+</section>
+<section id="generate-observations">
+<h2>Generate Observations<a class="headerlink" href="#generate-observations" title="Permalink to this heading">¶</a></h2>
 <p>We next simulate an observation process.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">random</span>
 
