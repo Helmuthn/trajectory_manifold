@@ -69,6 +69,7 @@ information.
 
     from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
     from jax import jit, vmap
+    import jax.numpy as jnp
 
     term = ODETerm(vector_field)
     solver = parameters.solver
@@ -117,7 +118,6 @@ and their log prior.
 
 .. code-block:: python
 
-    import jax.numpy as jnp
 
     def observation_log_likelihood(observation, state):
         """Compute log p(y|x) for a given observation and state"""
