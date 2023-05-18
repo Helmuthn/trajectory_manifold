@@ -5,15 +5,10 @@ Quick Start
 Installation
 ------------
 
-This project is not yet published on pypi.
+This project is available on pypi!
+Install with::
 
-For now, clone the repository with::
-
-    git clone https://github.com/Helmuthn/trajectory_manifold.git
-
-then ``cd`` into the directory and install with::
-
-    pip install .
+    pip install trajectory_manifold
 
 This project depends on `jax 0.4.3+ <https://github.com/google/jax>`_, `diffrax 0.3.0+ <https://github.com/patrick-kidger/diffrax>`_, and `jaxtyping <https://github.com/google/jaxtyping>`_.
 
