@@ -132,6 +132,10 @@ and their log prior.
         """Compute log p(x) for a given state"""
         return -1 * jnp.log(9)
 
+
+Generate Observations
+---------------------
+
 We next simulate an observation process.
 
 .. code-block:: python
@@ -152,6 +156,7 @@ We next simulate an observation process.
     observations = states + noise
     observation_times = observation_times[:30:subsample]
     observations = observations[:30:subsample,:]
+
 
 State Posterior
 ---------------
