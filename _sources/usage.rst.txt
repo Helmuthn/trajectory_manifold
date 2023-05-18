@@ -44,6 +44,7 @@ ODE solvers.
 
     from trajectory_manifold import examples
     from trajectory_manifold.manifold import SolverParameters
+    from diffrax import Heun
 
     vector_field = examples.lotka_volterra_vector_field(1,2,4,2)
 
@@ -66,7 +67,7 @@ information.
 
 .. code-block:: python
 
-    from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve, Heun
+    from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
     from jax import jit, vmap
 
     term = ODETerm(vector_field)

@@ -118,6 +118,7 @@ This periodic system represents a simple predator-prey population model.</p>
 ODE solvers.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">trajectory_manifold</span> <span class="kn">import</span> <span class="n">examples</span>
 <span class="kn">from</span> <span class="nn">trajectory_manifold.manifold</span> <span class="kn">import</span> <span class="n">SolverParameters</span>
+<span class="kn">from</span> <span class="nn">diffrax</span> <span class="kn">import</span> <span class="n">Heun</span>
 
 <span class="n">vector_field</span> <span class="o">=</span> <span class="n">examples</span><span class="o">.</span><span class="n">lotka_volterra_vector_field</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
 
@@ -136,7 +137,7 @@ of <span class="math notranslate nohighlight">\(\psi\)</span>, or the transforma
 We additionally include an automatic vectorization of <span class="math notranslate nohighlight">\(\psi\)</span> using <code class="docutils literal notranslate"><span class="pre">vmap</span></code> in Jax.</p>
 <p>While code is included here, see the the documentation for Jax and Diffrax for more
 information.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">diffrax</span> <span class="kn">import</span> <span class="n">ODETerm</span><span class="p">,</span> <span class="n">SaveAt</span><span class="p">,</span> <span class="n">PIDController</span><span class="p">,</span> <span class="n">diffeqsolve</span><span class="p">,</span> <span class="n">Heun</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">diffrax</span> <span class="kn">import</span> <span class="n">ODETerm</span><span class="p">,</span> <span class="n">SaveAt</span><span class="p">,</span> <span class="n">PIDController</span><span class="p">,</span> <span class="n">diffeqsolve</span>
 <span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">jit</span><span class="p">,</span> <span class="n">vmap</span>
 
 <span class="n">term</span> <span class="o">=</span> <span class="n">ODETerm</span><span class="p">(</span><span class="n">vector_field</span><span class="p">)</span>
