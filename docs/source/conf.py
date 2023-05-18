@@ -17,7 +17,8 @@ release = '0.1'
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
               'sphinx.ext.napoleon',
-              'sphinx.ext.mathjax']
+              'sphinx.ext.mathjax',
+              'sphinxcontrib.video']
 
 templates_path = ['_templates']
 exclude_patterns = []
