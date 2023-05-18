@@ -74,7 +74,7 @@ information.
     term = ODETerm(vector_field)
     solver = parameters.solver
     observation_times = jnp.arange(parameters.time_interval[0], 
-                                   parameters.time_interval[1] + parameters.step_size, 
+                                   parameters.time_interval[1], 
                                    step=parameters.step_size)
 
     saveat = SaveAt(ts = observation_times)
@@ -276,16 +276,16 @@ Apply steps of the ADAM optimizer to compute the MMSE estimate.
     step_count = 100
 
     for i in range(step_count):
-        grads = g(opt_state)
+        grads = g(state)
         updates, opt_state = optimizer.update(grads, opt_state)
-        opt_state = optax.apply_updates(opt_state, updates)[0]
+        state = optax.apply_updates(state, updates)[0]
 
 The variable ``opt_state`` now contains :math:`\psi^{-1}(\hat{\mathbf{x}})`.
 We must solve the ODE one final time to compute our estimate.
 
 .. code-block:: python
 
-   trajectory_estimate = SolveODE(opt_state)
+   trajectory_estimate = SolveODE(state)
 
 Below, we include a video of the convergence of the ADAM optimizer.
 

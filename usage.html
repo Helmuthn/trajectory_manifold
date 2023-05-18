@@ -147,7 +147,7 @@ information.</p>
 <span class="n">term</span> <span class="o">=</span> <span class="n">ODETerm</span><span class="p">(</span><span class="n">vector_field</span><span class="p">)</span>
 <span class="n">solver</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">solver</span>
 <span class="n">observation_times</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                               <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">parameters</span><span class="o">.</span><span class="n">step_size</span><span class="p">,</span>
+                               <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
                                <span class="n">step</span><span class="o">=</span><span class="n">parameters</span><span class="o">.</span><span class="n">step_size</span><span class="p">)</span>
 
 <span class="n">saveat</span> <span class="o">=</span> <span class="n">SaveAt</span><span class="p">(</span><span class="n">ts</span> <span class="o">=</span> <span class="n">observation_times</span><span class="p">)</span>
@@ -307,14 +307,14 @@ For this example, we will use the ADAM optimizer.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">step_count</span> <span class="o">=</span> <span class="mi">100</span>
 
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">step_count</span><span class="p">):</span>
-    <span class="n">grads</span> <span class="o">=</span> <span class="n">g</span><span class="p">(</span><span class="n">opt_state</span><span class="p">)</span>
+    <span class="n">grads</span> <span class="o">=</span> <span class="n">g</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
     <span class="n">updates</span><span class="p">,</span> <span class="n">opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">grads</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">)</span>
-    <span class="n">opt_state</span> <span class="o">=</span> <span class="n">optax</span><span class="o">.</span><span class="n">apply_updates</span><span class="p">(</span><span class="n">opt_state</span><span class="p">,</span> <span class="n">updates</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">optax</span><span class="o">.</span><span class="n">apply_updates</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">updates</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>The variable <code class="docutils literal notranslate"><span class="pre">opt_state</span></code> now contains <span class="math notranslate nohighlight">\(\psi^{-1}(\hat{\mathbf{x}})\)</span>.
 We must solve the ODE one final time to compute our estimate.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">trajectory_estimate</span> <span class="o">=</span> <span class="n">SolveODE</span><span class="p">(</span><span class="n">opt_state</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">trajectory_estimate</span> <span class="o">=</span> <span class="n">SolveODE</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Below, we include a video of the convergence of the ADAM optimizer.</p>
