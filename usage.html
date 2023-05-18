@@ -5,13 +5,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Usage &#8212; Trajectory Manifold 0.1 documentation</title>
+    <title>Quick Start &#8212; Trajectory Manifold 0.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
     <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/doctools.js"></script>
     <script src="_static/sphinx_highlight.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="API" href="api.html" />
@@ -47,9 +48,12 @@
 
 <h3>Navigation</h3>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quick Start</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#problem-setup">Problem Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#state-posterior">State Posterior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#importance-sampling">Importance Sampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#projection">Projection</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API</a><ul>
@@ -81,8 +85,8 @@
 
           <div class="body" role="main">
             
-  <section id="usage">
-<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this heading">¶</a></h1>
+  <section id="quick-start">
+<h1>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this heading">¶</a></h1>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h2>
 <p>This project is not yet published on pypi.</p>
@@ -98,13 +102,22 @@
 <p>Note that jax installation is a bit more specialized and requires selection
 dependent on your particular system. Thus, it is advised that you install it before this package.</p>
 </section>
-<section id="quick-start">
-<h2>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this heading">¶</a></h2>
+<section id="problem-setup">
+<h2>Problem Setup<a class="headerlink" href="#problem-setup" title="Permalink to this heading">¶</a></h2>
 <p>The key insight in this project is to interpret forecasting of ODE based
-systems as a reparameterization of the state estimation problem.</p>
+systems as a reparameterization of the state estimation problem.
+Throughout the remainder of the quickstart page, we demonstrate
+a method to do minimum mean squared error estimation on the manifold of
+solutions to a differential equation.</p>
 <p>In this example, we will use the Lotka-Volterra system, provided in the
-<cite>examples</cite> module of the library.
-We begin by initializing the system and choosing the parameters for the
+<code class="docutils literal notranslate"><span class="pre">examples</span></code> module of the library.
+This periodic system represents a simple predator-prey population model.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+   \dot{x}^{(1)} &amp;= \alpha x^{(1)} - \beta x^{(1)} x^{(2)} \\
+   \dot{x}^{(2)} &amp;= \delta x^{(1)}x^{(2)} - \gamma x^{(2)}
+\end{aligned}\end{split}\]</div>
+<p>We begin by initializing the system and choosing the parameters for the
 ODE solvers.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">trajectory_manifold</span> <span class="kn">import</span> <span class="n">examples</span>
 <span class="kn">from</span> <span class="nn">trajectory_manifold.manifold</span> <span class="kn">import</span> <span class="n">SolverParameters</span>
@@ -119,11 +132,42 @@ ODE solvers.</p>
                               <span class="n">max_steps</span><span class="o">=</span><span class="mi">16</span><span class="o">**</span><span class="mi">5</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>Next, define our likelihood function and prior.
+We will consider the case of additive standard multivariate Gaussian noise,
+where the conditional distribution of the observation given the state is given
+by the following.</p>
+<div class="math notranslate nohighlight">
+\[p(y|x) = \frac{1}{2\pi}e^{-\frac{\|\mathbf{y}-\mathbf{x}\|^2}{2}}.\]</div>
+<p>We further assume a uniform prior over a feasible set.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}p(x) = \begin{cases}
+     1/4 &amp; x \in [0.2,2.2] \times [0.2,2.2] \\
+     0 &amp; \text{otherwise}
+     \end{cases}\end{split}\]</div>
+<p>For numerical stability, we will encode these in terms of their log likelihood
+and their log prior.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">jnp</span>
+
+<span class="k">def</span> <span class="nf">observation_log_likelihood</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute log p(y|x) for a given observation and state&quot;&quot;&quot;</span>
+    <span class="n">partition</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span><span class="p">,</span> <span class="o">-</span><span class="n">observations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span> <span class="o">-</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">observation</span> <span class="o">-</span> <span class="n">state</span><span class="p">))</span><span class="o">/</span><span class="mi">2</span>
+
+<span class="k">def</span> <span class="nf">state_log_prior</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute log p(x) for a given state&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+</pre></div>
+</div>
 <p>We next simulate an observation process.
 To do so, we use Jax for random number generation and Diffrax for
-the ODE solvers.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dimension</span> <span class="o">=</span> <span class="mi">2</span>
-<span class="n">noise_std</span> <span class="o">=</span> <span class="mi">1</span>
+the ODE solvers.
+While code is included here, see the packages’ respective documentation
+for more details.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span> <span class="nn">diffrax</span> <span class="kn">import</span> <span class="n">ODETerm</span><span class="p">,</span> <span class="n">SaveAt</span><span class="p">,</span> <span class="n">PIDController</span><span class="p">,</span> <span class="n">diffeqsolve</span><span class="p">,</span> <span class="n">Heun</span>
+
+<span class="n">dimension</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">subsample</span> <span class="o">=</span> <span class="mi">6</span>
 
 <span class="n">key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
 <span class="n">key</span><span class="p">,</span> <span class="n">subkey</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
@@ -153,18 +197,126 @@ the ODE solvers.</p>
 <span class="n">key</span><span class="p">,</span> <span class="n">subkey</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 <span class="n">noise</span> <span class="o">=</span> <span class="n">noise_std</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">subkey</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">states</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 <span class="n">observations</span> <span class="o">=</span> <span class="n">states</span> <span class="o">+</span> <span class="n">noise</span>
-<span class="n">observation_times</span> <span class="o">=</span> <span class="n">observation_times</span><span class="p">[:</span><span class="mi">30</span><span class="p">]</span>
-<span class="n">observations</span> <span class="o">=</span> <span class="n">observations</span><span class="p">[:</span><span class="mi">30</span><span class="p">,:]</span>
-<span class="n">subsample</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">observation_times</span> <span class="o">=</span> <span class="n">observation_times</span><span class="p">[:</span><span class="mi">30</span><span class="p">:</span><span class="n">subsample</span><span class="p">]</span>
+<span class="n">observations</span> <span class="o">=</span> <span class="n">observations</span><span class="p">[:</span><span class="mi">30</span><span class="p">:</span><span class="n">subsample</span><span class="p">,:]</span>
 </pre></div>
 </div>
-<p>Next, define our likelihood function and prior.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">observation_log_likelihood</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
-    <span class="n">partition</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span><span class="p">,</span> <span class="o">-</span><span class="n">observations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">observation</span> <span class="o">-</span> <span class="n">state</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">noise_std</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+</section>
+<section id="state-posterior">
+<h2>State Posterior<a class="headerlink" href="#state-posterior" title="Permalink to this heading">¶</a></h2>
+<p>We now use the <code class="docutils literal notranslate"><span class="pre">estimation</span></code> module to convert our log likelihood, log prior,
+and observations, and system definitions into an unnormalized log posterior.
+The following code constructs a function <code class="docutils literal notranslate"><span class="pre">posterior_state</span></code> which
+represents</p>
+<div class="math notranslate nohighlight">
+\[\tilde{p}(x|y) = \frac{p(x|y)}{Z}\]</div>
+<p>for some unknown constant <span class="math notranslate nohighlight">\(Z\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">trajectory_manifold</span> <span class="kn">import</span> <span class="n">estimation</span>
+<span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">jit</span>
 
-<span class="k">def</span> <span class="nf">state_log_prior</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
-    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+<span class="n">log_posterior_state</span> <span class="o">=</span> <span class="n">estimation</span><span class="o">.</span><span class="n">state_log_posterior</span><span class="p">(</span><span class="n">vector_field</span><span class="p">,</span>
+                                                     <span class="n">observations</span><span class="p">,</span>
+                                                     <span class="n">observation_times</span><span class="p">,</span>
+                                                     <span class="n">observation_log_likelihood</span><span class="p">,</span>
+                                                     <span class="n">state_log_prior</span><span class="p">,</span>
+                                                     <span class="n">parameters</span><span class="p">)</span>
+
+<span class="nd">@jit</span>
+<span class="k">def</span> <span class="nf">posterior_state</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_posterior_state</span><span class="p">(</span><span class="n">state</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>For sampling applications, it is desirable to have a vectorized version
+of <code class="docutils literal notranslate"><span class="pre">posterior_state</span></code>, which can be constructed using <code class="docutils literal notranslate"><span class="pre">vmap</span></code>, below.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">vmap</span>
+
+<span class="n">posterior_state_v</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">posterior_state</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="importance-sampling">
+<h2>Importance Sampling<a class="headerlink" href="#importance-sampling" title="Permalink to this heading">¶</a></h2>
+<p>We now compute the ambient minimum mean squared error (MMSE) trajectory
+through importance sampling.</p>
+<p>While more sophisticated sampling techniques may be used,
+we approximate the conditional expectation as</p>
+<div class="math notranslate nohighlight">
+\[\hat{\mathbf{x}}_{\text{MMSE}} = \frac{\sum_{i=1}^S \psi(\mathbf{X}_i) p(\mathbf{X}_i | \mathbf{y})}{\sum_{i=1}^S p(\mathbf{X}_i | \mathbf{y})},\]</div>
+<p>where each <span class="math notranslate nohighlight">\(\mathbf{X}_i\)</span> is drawn i.i.d. from the prior distribution.</p>
+<p>We begin with a helper function to compute solutions of the ODE given
+a collection of initial conditions.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@jit</span>
+<span class="k">def</span> <span class="nf">SolveODE</span><span class="p">(</span><span class="n">initial_state</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">diffeqsolve</span><span class="p">(</span><span class="n">term</span><span class="p">,</span>
+                     <span class="n">solver</span><span class="p">,</span>
+                     <span class="n">t0</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                     <span class="n">t1</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                     <span class="n">dt0</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+                     <span class="n">saveat</span> <span class="o">=</span> <span class="n">saveat</span><span class="p">,</span>
+                     <span class="n">stepsize_controller</span> <span class="o">=</span> <span class="n">stepsize_controller</span><span class="p">,</span>
+                     <span class="n">y0</span> <span class="o">=</span> <span class="n">initial_state</span><span class="p">)</span><span class="o">.</span><span class="n">ys</span>
+
+<span class="n">solveODE_v</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">SolveODE</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Next, compute 100000 samples of initial conditions from our prior distribution.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sample_count</span> <span class="o">=</span> <span class="mi">100000</span>
+<span class="n">key</span><span class="p">,</span> <span class="n">subkey</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">subkey</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">sample_count</span><span class="p">,</span> <span class="n">dimension</span><span class="p">,))</span> <span class="o">+</span> <span class="n">center</span> <span class="o">-</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>Compute the associated solutions and unnormalized distributions.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sample_weights</span> <span class="o">=</span> <span class="n">posterior_state_v</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+<span class="n">sample_sols</span> <span class="o">=</span> <span class="n">solveODE_v</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally, compute the estimate by averaging the trajectories.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">estimate</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">[:,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">sample_sols</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="projection">
+<h2>Projection<a class="headerlink" href="#projection" title="Permalink to this heading">¶</a></h2>
+<p>Finally, we project the unconstrained solution onto the manifold.
+This results in the constrained MMSE solution by the orthogonality principle.</p>
+<p>Because the manifold is curved, this is not a linear projection.
+We instead use <code class="docutils literal notranslate"><span class="pre">optax</span></code> to optimize through a gradient descent.</p>
+<p>Begin by computing the pullback of the gradient on the manifold through the ODE solver.
+To do so, we provide the function <code class="docutils literal notranslate"><span class="pre">distance_gradient</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">trajectory_manifold.optimize</span> <span class="kn">import</span> <span class="n">distance_gradient</span>
+
+<span class="n">g</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="n">distance_gradient</span><span class="p">(</span><span class="n">state</span><span class="p">,</span>
+                                    <span class="n">vector_field</span><span class="p">,</span>
+                                    <span class="n">estimate</span><span class="p">,</span>
+                                    <span class="n">parameters</span><span class="p">)</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">jit</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Next, import <code class="docutils literal notranslate"><span class="pre">optax</span></code> and configure the learner.
+For this example, we will use the ADAM optimizer.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">optax</span>
+
+<span class="n">start_learner_rate</span> <span class="o">=</span> <span class="mf">1e-1</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">optax</span><span class="o">.</span><span class="n">adam</span><span class="p">(</span><span class="n">start_learner_rate</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Choose an arbitrary initialization.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">state</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">.4</span>
+<span class="n">opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Apply steps of the ADAM optimizer to compute the MMSE estimate.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">step_count</span> <span class="o">=</span> <span class="mi">150</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">step_count</span><span class="p">):</span>
+    <span class="n">grads</span> <span class="o">=</span> <span class="n">g</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+    <span class="n">updates</span><span class="p">,</span> <span class="n">opt_state</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">grads</span><span class="p">,</span> <span class="n">opt_state</span><span class="p">)</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">optax</span><span class="o">.</span><span class="n">apply_updates</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">updates</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The variable <code class="docutils literal notranslate"><span class="pre">params</span></code> now contains <span class="math notranslate nohighlight">\(\psi^{-1}(\hat{\mathbf{x}})\)</span>.
+We must solve the ODE one final time to compute our estimate.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">trajectory_estimate</span> <span class="o">=</span> <span class="n">SolveODE</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
