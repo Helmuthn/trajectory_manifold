@@ -95,6 +95,7 @@ def grid_optimum(
         x: Float[Array, " dim1"], 
         y: Float[Array, " dim2"], 
         upper: bool = True,
+        reverse: bool = False,
     ) -> Float[Array, "2"]:
     """ Compute the optimal value in a grid.
 
@@ -106,6 +107,7 @@ def grid_optimum(
         x: Values in the first index
         y: Values for the second index
         upper: Maximize if `True`, Minimize if `False`
+        reverse: Reverse x and y coordinates. Common due to transposes.
 
     Returns:
         An array containing the x, y coordininate of the optimal grid point.
@@ -115,6 +117,9 @@ def grid_optimum(
     else:
         peak = jnp.argmin(grid)
 
-    peak_x = x[peak % x.shape[0]]
-    peak_y = y[peak // y.shape[0]]
-    return jnp.stack([peak_x, peak_y])
+    peak_x = x[peak // x.shape[0]]
+    peak_y = y[peak % y.shape[0]]
+    if reverse:
+        return jnp.stack([peak_y, peak_x]) 
+    else:
+        return jnp.stack([peak_x, peak_y])

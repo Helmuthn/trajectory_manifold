@@ -222,9 +222,9 @@ for i, variance in enumerate(noise_power):
         grid_ps = grid_ps / jnp.sum(grid_ps)
 
         # Find maximum of grid for ML + MAP
-        ml_est = grid_optimum(grid_ll, x, y, True)
+        ml_est = grid_optimum(grid_ll, x, y, True, True)
         map_state_est = ml_est
-        map_trajectory_est = grid_optimum(grid_pt, x, y, True)
+        map_trajectory_est = grid_optimum(grid_pt, x, y, True, True)
 
         ml_trajectory = SolveODE(ml_est, parameters)
         map_trajectory = SolveODE(map_trajectory_est, parameters)
@@ -240,7 +240,7 @@ for i, variance in enumerate(noise_power):
 
         # Construct MMSE trajectory on manifold
         mse_mat = mse_with_distance(grid_ps, distance_mat, delta)
-        mmse_init = grid_optimum(mse_mat, x, y, False)
+        mmse_init = grid_optimum(mse_mat, x, y, False, True)
         mmse_trajectory_proj = SolveODE(mmse_init, parameters)
 
         # Compute Error
@@ -379,9 +379,9 @@ for i, horizon in enumerate(time_horizons):
         grid_ps = grid_ps / jnp.sum(grid_ps)
 
         # Find maximum of grid for ML + MAP
-        ml_est = grid_optimum(grid_ll, x, y, True)
+        ml_est = grid_optimum(grid_ll, x, y, True, True)
         map_state_est = ml_est
-        map_trajectory_est = grid_optimum(grid_pt, x, y, True)
+        map_trajectory_est = grid_optimum(grid_pt, x, y, True, True)
 
         ml_trajectory = SolveODE(ml_est, parameters)
         map_trajectory = SolveODE(map_trajectory_est, parameters)
@@ -397,7 +397,7 @@ for i, horizon in enumerate(time_horizons):
 
         # Construct MMSE trajectory on manifold
         mse_mat = mse_with_distance(grid_ps, distance_mat, delta)
-        mmse_init = grid_optimum(mse_mat, x, y, False)
+        mmse_init = grid_optimum(mse_mat, x, y, False, True)
         mmse_trajectory_proj = SolveODE(mmse_init, parameters)
 
         # Compute Error
