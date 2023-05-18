@@ -140,6 +140,7 @@ We next simulate an observation process.
 
     dimension = 2
     subsample = 6
+    center = 1.2 
 
     key = random.PRNGKey(123)
     key, subkey = random.split(key)
