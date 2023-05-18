@@ -276,16 +276,16 @@ Apply steps of the ADAM optimizer to compute the MMSE estimate.
     step_count = 100
 
     for i in range(step_count):
-        grads = g(params)
+        grads = g(opt_state)
         updates, opt_state = optimizer.update(grads, opt_state)
-        params = optax.apply_updates(params, updates)[0]
+        opt_state = optax.apply_updates(opt_state, updates)[0]
 
-The variable ``params`` now contains :math:`\psi^{-1}(\hat{\mathbf{x}})`.
+The variable ``opt_state`` now contains :math:`\psi^{-1}(\hat{\mathbf{x}})`.
 We must solve the ODE one final time to compute our estimate.
 
 .. code-block:: python
 
-   trajectory_estimate = SolveODE(params)
+   trajectory_estimate = SolveODE(opt_state)
 
 Below, we include a video of the convergence of the ADAM optimizer.
 
