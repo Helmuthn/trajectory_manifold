@@ -118,6 +118,7 @@ and their log prior.
 
 .. code-block:: python
 
+    from math import pi
 
     def observation_log_likelihood(observation, state):
         """Compute log p(y|x) for a given observation and state"""
