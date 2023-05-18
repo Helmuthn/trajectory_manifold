@@ -149,7 +149,7 @@ We next simulate an observation process.
     states = SolveODE(true_init)
 
     key, subkey = random.split(key)
-    noise = noise_std*random.normal(subkey, shape=states.shape)
+    noise = random.normal(subkey, shape=states.shape)
     observations = states + noise
     observation_times = observation_times[:30:subsample]
     observations = observations[:30:subsample,:]
