@@ -27,10 +27,7 @@ The core functionality is found in the ``trajectory_manifold.manifold`` module.
 Estimation 
 ----------
 
-The module ``trajectory_manifold.estimation`` contains example estimation algorithms
-using the trajectory manifold reweighting. While these functions are essentially
-plug-and-play for new problems, they are not the best implementations and 
-serve primarily as a proof of concept.
+The module ``trajectory_manifold.estimation`` contains functions related to probability.
 
 .. automodule:: trajectory_manifold.estimation 
    :members: 
@@ -38,9 +35,9 @@ serve primarily as a proof of concept.
 Optimization 
 ------------
 
-The module ``trajectory_manifold.optimize`` contains a couple of optimization 
-procedures for the estimators.
-The main one of which is an implementation of a simulated annealing optimizer. 
+The module ``trajectory_manifold.optimize`` contains tools for optimization on the
+manifold of feasible trajectories.
+The main approach is the computation of pullbacks of gradients into the state space.
 
 .. automodule:: trajectory_manifold.optimize
    :members:

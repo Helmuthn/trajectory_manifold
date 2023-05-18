@@ -190,10 +190,7 @@ state space.</p>
 </section>
 <section id="estimation">
 <h2>Estimation<a class="headerlink" href="#estimation" title="Permalink to this heading">¶</a></h2>
-<p>The module <code class="docutils literal notranslate"><span class="pre">trajectory_manifold.estimation</span></code> contains example estimation algorithms
-using the trajectory manifold reweighting. While these functions are essentially
-plug-and-play for new problems, they are not the best implementations and
-serve primarily as a proof of concept.</p>
+<p>The module <code class="docutils literal notranslate"><span class="pre">trajectory_manifold.estimation</span></code> contains functions related to probability.</p>
 <span class="target" id="module-trajectory_manifold.estimation"></span><p>This module includes functions for statistical estimation</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="trajectory_manifold.estimation.state_log_posterior">
@@ -360,9 +357,9 @@ posterior distribution of the observation.</p>
 </section>
 <section id="optimization">
 <h2>Optimization<a class="headerlink" href="#optimization" title="Permalink to this heading">¶</a></h2>
-<p>The module <code class="docutils literal notranslate"><span class="pre">trajectory_manifold.optimize</span></code> contains a couple of optimization
-procedures for the estimators.
-The main one of which is an implementation of a simulated annealing optimizer.</p>
+<p>The module <code class="docutils literal notranslate"><span class="pre">trajectory_manifold.optimize</span></code> contains tools for optimization on the
+manifold of feasible trajectories.
+The main approach is the computation of pullbacks of gradients into the state space.</p>
 <span class="target" id="module-trajectory_manifold.optimize"></span><p>This module contains functions useful for optimization.</p>
 <p>This module contains useful functions for optimization on the
 trajectory manifold. It enables the computation of the pullback

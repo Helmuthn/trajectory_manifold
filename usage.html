@@ -132,6 +132,41 @@ ODE solvers.</p>
                               <span class="n">max_steps</span><span class="o">=</span><span class="mi">16</span><span class="o">**</span><span class="mi">5</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>We begin with a helper function to compute solutions of the ODE given
+a collection of initial conditions.
+To do so, we wrap <code class="docutils literal notranslate"><span class="pre">diffeqsolve</span></code> from Diffrax to construct a representation
+of <span class="math notranslate nohighlight">\(\psi\)</span>, or the transformation from initial conditions to solutions.
+We additionally include an automatic vectorization of <span class="math notranslate nohighlight">\(\psi\)</span> using <code class="docutils literal notranslate"><span class="pre">vmap</span></code> in Jax.</p>
+<p>While code is included here, see the the documentation for Jax and Diffrax for more
+information.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">diffrax</span> <span class="kn">import</span> <span class="n">ODETerm</span><span class="p">,</span> <span class="n">SaveAt</span><span class="p">,</span> <span class="n">PIDController</span><span class="p">,</span> <span class="n">diffeqsolve</span><span class="p">,</span> <span class="n">Heun</span>
+<span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">jit</span><span class="p">,</span> <span class="n">vmap</span>
+
+<span class="n">term</span> <span class="o">=</span> <span class="n">ODETerm</span><span class="p">(</span><span class="n">vector_field</span><span class="p">)</span>
+<span class="n">solver</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">solver</span>
+<span class="n">observation_times</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                               <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">parameters</span><span class="o">.</span><span class="n">step_size</span><span class="p">,</span>
+                               <span class="n">step</span><span class="o">=</span><span class="n">parameters</span><span class="o">.</span><span class="n">step_size</span><span class="p">)</span>
+
+<span class="n">saveat</span> <span class="o">=</span> <span class="n">SaveAt</span><span class="p">(</span><span class="n">ts</span> <span class="o">=</span> <span class="n">observation_times</span><span class="p">)</span>
+
+<span class="n">stepsize_controller</span> <span class="o">=</span> <span class="n">PIDController</span><span class="p">(</span><span class="n">rtol</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">relative_tolerance</span><span class="p">,</span>
+                                    <span class="n">atol</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">absolute_tolerance</span><span class="p">)</span>
+
+<span class="nd">@jit</span>
+<span class="k">def</span> <span class="nf">SolveODE</span><span class="p">(</span><span class="n">initial_state</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">diffeqsolve</span><span class="p">(</span><span class="n">term</span><span class="p">,</span>
+                       <span class="n">solver</span><span class="p">,</span>
+                       <span class="n">t0</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                       <span class="n">t1</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                       <span class="n">dt0</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+                       <span class="n">saveat</span> <span class="o">=</span> <span class="n">saveat</span><span class="p">,</span>
+                       <span class="n">stepsize_controller</span> <span class="o">=</span> <span class="n">stepsize_controller</span><span class="p">,</span>
+                       <span class="n">y0</span> <span class="o">=</span> <span class="n">initial_state</span><span class="p">)</span><span class="o">.</span><span class="n">ys</span>
+
+<span class="n">solveODE_v</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">SolveODE</span><span class="p">)</span>
+</pre></div>
+</div>
 <p>Next, define our likelihood function and prior.
 We will consider the case of additive standard multivariate Gaussian noise,
 where the conditional distribution of the observation given the state is given
@@ -158,13 +193,8 @@ and their log prior.</p>
     <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>We next simulate an observation process.
-To do so, we use Jax for random number generation and Diffrax for
-the ODE solvers.
-While code is included here, see the packages’ respective documentation
-for more details.</p>
+<p>We next simulate an observation process.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">random</span>
-<span class="kn">from</span> <span class="nn">diffrax</span> <span class="kn">import</span> <span class="n">ODETerm</span><span class="p">,</span> <span class="n">SaveAt</span><span class="p">,</span> <span class="n">PIDController</span><span class="p">,</span> <span class="n">diffeqsolve</span><span class="p">,</span> <span class="n">Heun</span>
 
 <span class="n">dimension</span> <span class="o">=</span> <span class="mi">2</span>
 <span class="n">subsample</span> <span class="o">=</span> <span class="mi">6</span>
@@ -173,26 +203,7 @@ for more details.</p>
 <span class="n">key</span><span class="p">,</span> <span class="n">subkey</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 <span class="n">true_init</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">subkey</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">dimension</span><span class="p">,))</span> <span class="o">+</span> <span class="n">center</span> <span class="o">-</span> <span class="mi">1</span>
 
-<span class="n">term</span> <span class="o">=</span> <span class="n">ODETerm</span><span class="p">(</span><span class="n">vector_field</span><span class="p">)</span>
-<span class="n">solver</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">solver</span>
-<span class="n">observation_times</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                               <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">parameters</span><span class="o">.</span><span class="n">step_size</span><span class="p">,</span>
-                               <span class="n">step</span><span class="o">=</span><span class="n">parameters</span><span class="o">.</span><span class="n">step_size</span><span class="p">)</span>
-
-<span class="n">saveat</span> <span class="o">=</span> <span class="n">SaveAt</span><span class="p">(</span><span class="n">ts</span> <span class="o">=</span> <span class="n">observation_times</span><span class="p">)</span>
-
-<span class="n">stepsize_controller</span> <span class="o">=</span> <span class="n">PIDController</span><span class="p">(</span><span class="n">rtol</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">relative_tolerance</span><span class="p">,</span>
-                                    <span class="n">atol</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">absolute_tolerance</span><span class="p">)</span>
-
-<span class="n">states</span> <span class="o">=</span> <span class="n">diffeqsolve</span><span class="p">(</span><span class="n">term</span><span class="p">,</span>
-                     <span class="n">solver</span><span class="p">,</span>
-                     <span class="n">t0</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                     <span class="n">t1</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                     <span class="n">dt0</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">step_size</span><span class="p">,</span>
-                     <span class="n">saveat</span> <span class="o">=</span> <span class="n">saveat</span><span class="p">,</span>
-                     <span class="n">stepsize_controller</span> <span class="o">=</span> <span class="n">stepsize_controller</span><span class="p">,</span>
-                     <span class="n">y0</span> <span class="o">=</span> <span class="n">true_init</span><span class="p">)</span><span class="o">.</span><span class="n">ys</span>
-
+<span class="n">states</span> <span class="o">=</span> <span class="n">SolveODE</span><span class="p">(</span><span class="n">true_init</span><span class="p">)</span>
 
 <span class="n">key</span><span class="p">,</span> <span class="n">subkey</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 <span class="n">noise</span> <span class="o">=</span> <span class="n">noise_std</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">subkey</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">states</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
@@ -212,7 +223,6 @@ represents</p>
 \[\tilde{p}(x|y) = \frac{p(x|y)}{Z}\]</div>
 <p>for some unknown constant <span class="math notranslate nohighlight">\(Z\)</span>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">trajectory_manifold</span> <span class="kn">import</span> <span class="n">estimation</span>
-<span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">jit</span>
 
 <span class="n">log_posterior_state</span> <span class="o">=</span> <span class="n">estimation</span><span class="o">.</span><span class="n">state_log_posterior</span><span class="p">(</span><span class="n">vector_field</span><span class="p">,</span>
                                                      <span class="n">observations</span><span class="p">,</span>
@@ -228,9 +238,7 @@ represents</p>
 </div>
 <p>For sampling applications, it is desirable to have a vectorized version
 of <code class="docutils literal notranslate"><span class="pre">posterior_state</span></code>, which can be constructed using <code class="docutils literal notranslate"><span class="pre">vmap</span></code>, below.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">vmap</span>
-
-<span class="n">posterior_state_v</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">posterior_state</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">posterior_state_v</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">posterior_state</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -243,22 +251,6 @@ we approximate the conditional expectation as</p>
 <div class="math notranslate nohighlight">
 \[\hat{\mathbf{x}}_{\text{MMSE}} = \frac{\sum_{i=1}^S \psi(\mathbf{X}_i) p(\mathbf{X}_i | \mathbf{y})}{\sum_{i=1}^S p(\mathbf{X}_i | \mathbf{y})},\]</div>
 <p>where each <span class="math notranslate nohighlight">\(\mathbf{X}_i\)</span> is drawn i.i.d. from the prior distribution.</p>
-<p>We begin with a helper function to compute solutions of the ODE given
-a collection of initial conditions.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@jit</span>
-<span class="k">def</span> <span class="nf">SolveODE</span><span class="p">(</span><span class="n">initial_state</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">diffeqsolve</span><span class="p">(</span><span class="n">term</span><span class="p">,</span>
-                     <span class="n">solver</span><span class="p">,</span>
-                     <span class="n">t0</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                     <span class="n">t1</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                     <span class="n">dt0</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
-                     <span class="n">saveat</span> <span class="o">=</span> <span class="n">saveat</span><span class="p">,</span>
-                     <span class="n">stepsize_controller</span> <span class="o">=</span> <span class="n">stepsize_controller</span><span class="p">,</span>
-                     <span class="n">y0</span> <span class="o">=</span> <span class="n">initial_state</span><span class="p">)</span><span class="o">.</span><span class="n">ys</span>
-
-<span class="n">solveODE_v</span> <span class="o">=</span> <span class="n">vmap</span><span class="p">(</span><span class="n">SolveODE</span><span class="p">)</span>
-</pre></div>
-</div>
 <p>Next, compute 100000 samples of initial conditions from our prior distribution.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sample_count</span> <span class="o">=</span> <span class="mi">100000</span>
 <span class="n">key</span><span class="p">,</span> <span class="n">subkey</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
@@ -283,12 +275,12 @@ This results in the constrained MMSE solution by the orthogonality principle.</p
 We instead use <code class="docutils literal notranslate"><span class="pre">optax</span></code> to optimize through a gradient descent.</p>
 <p>Begin by computing the pullback of the gradient on the manifold through the ODE solver.
 To do so, we provide the function <code class="docutils literal notranslate"><span class="pre">distance_gradient</span></code>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">trajectory_manifold.optimize</span> <span class="kn">import</span> <span class="n">distance_gradient</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">trajectory_manifold</span> <span class="kn">import</span> <span class="n">optimize</span>
 
-<span class="n">g</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="n">distance_gradient</span><span class="p">(</span><span class="n">state</span><span class="p">,</span>
-                                    <span class="n">vector_field</span><span class="p">,</span>
-                                    <span class="n">estimate</span><span class="p">,</span>
-                                    <span class="n">parameters</span><span class="p">)</span>
+<span class="n">g</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="n">optimize</span><span class="o">.</span><span class="n">distance_gradient</span><span class="p">(</span><span class="n">state</span><span class="p">,</span>
+                                             <span class="n">vector_field</span><span class="p">,</span>
+                                             <span class="n">estimate</span><span class="p">,</span>
+                                             <span class="n">parameters</span><span class="p">)</span>
 <span class="n">g</span> <span class="o">=</span> <span class="n">jit</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
 </pre></div>
 </div>

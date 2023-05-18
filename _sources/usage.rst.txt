@@ -60,6 +60,44 @@ ODE solvers.
                                   max_steps=16**5)
 
 
+We begin with a helper function to compute solutions of the ODE given
+a collection of initial conditions.
+To do so, we wrap ``diffeqsolve`` from Diffrax to construct a representation
+of :math:`\psi`, or the transformation from initial conditions to solutions.
+We additionally include an automatic vectorization of :math:`\psi` using ``vmap`` in Jax.
+
+While code is included here, see the the documentation for Jax and Diffrax for more
+information.
+
+.. code-block:: python
+
+    from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve, Heun
+    from jax import jit, vmap
+
+    term = ODETerm(vector_field)
+    solver = parameters.solver
+    observation_times = jnp.arange(parameters.time_interval[0], 
+                                   parameters.time_interval[1] + parameters.step_size, 
+                                   step=parameters.step_size)
+
+    saveat = SaveAt(ts = observation_times)
+
+    stepsize_controller = PIDController(rtol = parameters.relative_tolerance,
+                                        atol = parameters.absolute_tolerance)
+
+    @jit
+    def SolveODE(initial_state):
+        return diffeqsolve(term,
+                           solver,
+                           t0 = parameters.time_interval[0],
+                           t1 = parameters.time_interval[1],
+                           dt0 = 0.1,
+                           saveat = saveat,
+                           stepsize_controller = stepsize_controller,
+                           y0 = initial_state).ys
+
+    solveODE_v = vmap(SolveODE)
+
 Next, define our likelihood function and prior.
 We will consider the case of additive standard multivariate Gaussian noise,
 where the conditional distribution of the observation given the state is given
@@ -95,15 +133,10 @@ and their log prior.
         return -1 * jnp.log(9)
 
 We next simulate an observation process.
-To do so, we use Jax for random number generation and Diffrax for
-the ODE solvers.
-While code is included here, see the packages' respective documentation
-for more details.
 
 .. code-block:: python
 
     from jax import random
-    from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve, Heun
 
     dimension = 2
     subsample = 6
@@ -112,26 +145,7 @@ for more details.
     key, subkey = random.split(key)
     true_init = 2 * random.uniform(subkey, shape=(dimension,)) + center - 1
 
-    term = ODETerm(vector_field)
-    solver = parameters.solver
-    observation_times = jnp.arange(parameters.time_interval[0], 
-                                   parameters.time_interval[1] + parameters.step_size, 
-                                   step=parameters.step_size)
-
-    saveat = SaveAt(ts = observation_times)
-
-    stepsize_controller = PIDController(rtol = parameters.relative_tolerance,
-                                        atol = parameters.absolute_tolerance)
-
-    states = diffeqsolve(term,
-                         solver,
-                         t0 = parameters.time_interval[0],
-                         t1 = parameters.time_interval[1],
-                         dt0 = parameters.step_size,
-                         saveat = saveat,
-                         stepsize_controller = stepsize_controller,
-                         y0 = true_init).ys
-
+    states = SolveODE(true_init)
 
     key, subkey = random.split(key)
     noise = noise_std*random.normal(subkey, shape=states.shape)
@@ -156,7 +170,6 @@ for some unknown constant :math:`Z`.
 .. code-block:: python
 
     from trajectory_manifold import estimation
-    from jax import jit
 
     log_posterior_state = estimation.state_log_posterior(vector_field,
                                                          observations,
@@ -174,9 +187,8 @@ of ``posterior_state``, which can be constructed using ``vmap``, below.
 
 .. code-block:: python
 
-    from jax import vmap
-
     posterior_state_v = vmap(posterior_state)
+
 
 Importance Sampling
 -------------------
@@ -193,23 +205,6 @@ we approximate the conditional expectation as
 
 where each :math:`\mathbf{X}_i` is drawn i.i.d. from the prior distribution.
 
-We begin with a helper function to compute solutions of the ODE given
-a collection of initial conditions.
-
-.. code-block:: python
-
-    @jit
-    def SolveODE(initial_state):
-        return diffeqsolve(term,
-                         solver,
-                         t0 = parameters.time_interval[0],
-                         t1 = parameters.time_interval[1],
-                         dt0 = 0.1,
-                         saveat = saveat,
-                         stepsize_controller = stepsize_controller,
-                         y0 = initial_state).ys
-
-    solveODE_v = vmap(SolveODE)
 
 Next, compute 100000 samples of initial conditions from our prior distribution.
 
@@ -246,12 +241,12 @@ To do so, we provide the function ``distance_gradient``.
 
 .. code-block:: python
 
-    from trajectory_manifold.optimize import distance_gradient
+    from trajectory_manifold import optimize
 
-    g = lambda state: distance_gradient(state,
-                                        vector_field,
-                                        estimate,
-                                        parameters)
+    g = lambda state: optimize.distance_gradient(state,
+                                                 vector_field,
+                                                 estimate,
+                                                 parameters)
     g = jit(g)
 
 Next, import ``optax`` and configure the learner.
