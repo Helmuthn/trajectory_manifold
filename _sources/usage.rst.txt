@@ -270,7 +270,7 @@ Apply steps of the ADAM optimizer to compute the MMSE estimate.
 
 .. code-block:: python
 
-    step_count = 150
+    step_count = 100
 
     for i in range(step_count):
         grads = g(params)
@@ -283,3 +283,7 @@ We must solve the ODE one final time to compute our estimate.
 .. code-block:: python
 
    trajectory_estimate = SolveODE(params)
+
+Below, we include a video of the convergence of the ADAM optimizer.
+
+.. video:: _static/assets/converge.mp4

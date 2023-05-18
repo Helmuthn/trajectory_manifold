@@ -298,7 +298,7 @@ For this example, we will use the ADAM optimizer.</p>
 </pre></div>
 </div>
 <p>Apply steps of the ADAM optimizer to compute the MMSE estimate.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">step_count</span> <span class="o">=</span> <span class="mi">150</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">step_count</span> <span class="o">=</span> <span class="mi">100</span>
 
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">step_count</span><span class="p">):</span>
     <span class="n">grads</span> <span class="o">=</span> <span class="n">g</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
@@ -311,7 +311,8 @@ We must solve the ODE one final time to compute our estimate.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">trajectory_estimate</span> <span class="o">=</span> <span class="n">SolveODE</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
 </pre></div>
 </div>
-</section>
+<p>Below, we include a video of the convergence of the ADAM optimizer.</p>
+<video controls="True" preload="auto"><source src="_static/assets/converge.mp4" type="video/mp4"></video></section>
 </section>
 
 
