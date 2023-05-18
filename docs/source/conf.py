@@ -18,7 +18,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
               'sphinx.ext.napoleon',
               'sphinx.ext.mathjax',
-              'sphinxcontrib.video']
+              'sphinxcontrib.video',
+              'sphinx_copybutton']
 
 templates_path = ['_templates']
 exclude_patterns = []
