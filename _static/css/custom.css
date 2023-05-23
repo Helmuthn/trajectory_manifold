@@ -48,3 +48,8 @@
 .n:first-of-type {
 	font-weight: bold;
 }
+
+.tutorial-img {
+    display: block;
+    margin: auto;
+}

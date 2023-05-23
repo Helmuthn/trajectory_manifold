@@ -101,13 +101,14 @@ Install with:</p>
 <p>This project depends on <a class="reference external" href="https://github.com/google/jax">jax 0.4.3+</a>, <a class="reference external" href="https://github.com/patrick-kidger/diffrax">diffrax 0.3.0+</a>, and <a class="reference external" href="https://github.com/google/jaxtyping">jaxtyping</a>.</p>
 <p>Note that jax installation is a bit more specialized and requires selection
 dependent on your particular system. Thus, it is advised that you install it before this package.</p>
+<p>This tutorial additionally uses the library <a class="reference external" href="https://github.com/deepmind/optax">optax</a> for gradient-based optimization.</p>
 </section>
 <section id="problem-setup">
 <h2>Problem Setup<a class="headerlink" href="#problem-setup" title="Permalink to this heading">¶</a></h2>
 <p>The key insight in this project is to interpret forecasting of ODE based
 systems as a reparameterization of the state estimation problem.
 Throughout the remainder of the quickstart page, we demonstrate
-a method to do minimum mean squared error estimation on the manifold of
+a method to do minimum mean squared error estimation (MMSE) on the manifold of
 solutions to a differential equation.</p>
 <p>In this example, we will use the Lotka-Volterra system, provided in the
 <code class="docutils literal notranslate"><span class="pre">examples</span></code> module of the library.
@@ -128,15 +129,15 @@ ODE solvers.</p>
 <span class="n">parameters</span> <span class="o">=</span> <span class="n">SolverParameters</span><span class="p">(</span><span class="n">relative_tolerance</span> <span class="o">=</span> <span class="mf">1e-2</span><span class="p">,</span>
                               <span class="n">absolute_tolerance</span> <span class="o">=</span> <span class="mf">1e-2</span><span class="p">,</span>
                               <span class="n">step_size</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
-                              <span class="n">time_interval</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">),</span>
+                              <span class="n">time_interval</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">10.1</span><span class="p">),</span>
                               <span class="n">solver</span><span class="o">=</span><span class="n">Heun</span><span class="p">(),</span>
                               <span class="n">max_steps</span><span class="o">=</span><span class="mi">16</span><span class="o">**</span><span class="mi">5</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>We begin with a helper function to compute solutions of the ODE given
+<p>Next, we construct a helper function to compute solutions of the ODE given
 a collection of initial conditions.
 To do so, we wrap <code class="docutils literal notranslate"><span class="pre">diffeqsolve</span></code> from Diffrax to construct a representation
-of <span class="math notranslate nohighlight">\(\psi\)</span>, or the transformation from initial conditions to solutions.
+of <span class="math notranslate nohighlight">\(\psi\)</span>, or the transformation from initial conditions to the manifold of solutions.
 We additionally include an automatic vectorization of <span class="math notranslate nohighlight">\(\psi\)</span> using <code class="docutils literal notranslate"><span class="pre">vmap</span></code> in Jax.</p>
 <p>While code is included here, see the the documentation for Jax and Diffrax for more
 information.</p>
@@ -174,11 +175,11 @@ We will consider the case of additive standard multivariate Gaussian noise,
 where the conditional distribution of the observation given the state is given
 by the following.</p>
 <div class="math notranslate nohighlight">
-\[p(y|x) = \frac{1}{2\pi}e^{-\frac{\|\mathbf{y}-\mathbf{x}\|^2}{2}}.\]</div>
-<p>We further assume a uniform prior over a feasible set.</p>
+\[p(\mathbf{y}|\mathbf{x}) = \frac{1}{2\pi}e^{-\frac{\|\mathbf{y}-\mathbf{x}\|^2}{2}}.\]</div>
+<p>We further assume a uniform prior over a feasible set of initial conditions.</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}p(x) = \begin{cases}
-     1/4 &amp; x \in [0.2,2.2] \times [0.2,2.2] \\
+\[\begin{split}p(\mathbf{x}) = \begin{cases}
+     1/4 &amp; \mathbf{x} \in [0.2,2.2] \times [0.2,2.2] \\
      0 &amp; \text{otherwise}
      \end{cases}\end{split}\]</div>
 <p>For numerical stability, we will encode these in terms of their log likelihood
@@ -192,13 +193,15 @@ and their log prior.</p>
 
 <span class="k">def</span> <span class="nf">state_log_prior</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute log p(x) for a given state&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="generate-observations">
 <h2>Generate Observations<a class="headerlink" href="#generate-observations" title="Permalink to this heading">¶</a></h2>
-<p>We next simulate an observation process.</p>
+<p>We next simulate an observation process.
+To do so, we solve the ODE and add noise to each sample.
+As the focus is forecasting with limited data, we then only take 5 measurements, each spaced by 0.6 seconds of simulation time.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">random</span>
 
 <span class="n">dimension</span> <span class="o">=</span> <span class="mi">2</span>
@@ -218,6 +221,9 @@ and their log prior.</p>
 <span class="n">observations</span> <span class="o">=</span> <span class="n">observations</span><span class="p">[:</span><span class="mi">30</span><span class="p">:</span><span class="n">subsample</span><span class="p">,:]</span>
 </pre></div>
 </div>
+<p>In the plot below, the solid lines represent the predator and prey populations, the dots represent our observations, and the vertical dashed red line represents the final observation time.</p>
+<a class="tutorial-img reference internal image-reference" href="_images/observations.svg"><img alt="_images/observations.svg" class="tutorial-img" src="_images/observations.svg" width="600" /></a>
+<p>Given the observation data and the known ODE model, our goal is to predict the entire predator-prey population curve over the 10 second time interval.</p>
 </section>
 <section id="state-posterior">
 <h2>State Posterior<a class="headerlink" href="#state-posterior" title="Permalink to this heading">¶</a></h2>
@@ -226,7 +232,7 @@ and observations, and system definitions into an unnormalized log posterior.
 The following code constructs a function <code class="docutils literal notranslate"><span class="pre">posterior_state</span></code> which
 represents</p>
 <div class="math notranslate nohighlight">
-\[\tilde{p}(x|y) = \frac{p(x|y)}{Z}\]</div>
+\[\tilde{p}(\mathbf{x}|\mathbf{y}) = \frac{p(\mathbf{x}|\mathbf{y})}{Z}\]</div>
 <p>for some unknown constant <span class="math notranslate nohighlight">\(Z\)</span>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">trajectory_manifold</span> <span class="kn">import</span> <span class="n">estimation</span>
 
@@ -272,6 +278,10 @@ we approximate the conditional expectation as</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">estimate</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">[:,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">sample_sols</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">/</span><span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>In the plot below, we see the true predator-prey populations over time as dashed lines, while the MMSE estimate based on the previous observations as solid lines.
+The key observation is that, while the MMSE estimate is optimal, it suffers from oversmoothing the further beyond the observed region the forecast extends.
+Thus, while the function fits the probability distribution in some sense, it does not result in a valid solution of the differential equation, and does not qualitatively capture the structure of the future.</p>
+<a class="tutorial-img reference internal image-reference" href="_images/mmse.svg"><img alt="_images/mmse.svg" class="tutorial-img" src="_images/mmse.svg" width="600" /></a>
 </section>
 <section id="projection">
 <h2>Projection<a class="headerlink" href="#projection" title="Permalink to this heading">¶</a></h2>
@@ -317,7 +327,11 @@ We must solve the ODE one final time to compute our estimate.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">trajectory_estimate</span> <span class="o">=</span> <span class="n">SolveODE</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Below, we include a video of the convergence of the ADAM optimizer.</p>
+<p>Finally, we show the results of our projection onto the manifold of feasible trajectories in the image below.
+The solid lines represent the MMSE estimate on the manifold, the dashed lines represent the true populations, and the dotted line represents the MMSE estimate in the ambient space.
+Note that the projection does a significantly better job capturing the periodic structure of the solution space.</p>
+<a class="tutorial-img reference internal image-reference" href="_images/final.svg"><img alt="_images/final.svg" class="tutorial-img" src="_images/final.svg" width="600" /></a>
+<p>Below, we include a video of the convergence of the ADAM optimizer, demonstrating the path of points in the gradient based optimization.</p>
 <video controls="True" preload="auto"><source src="_static/assets/converge.mp4" type="video/mp4"></video></section>
 </section>
 
