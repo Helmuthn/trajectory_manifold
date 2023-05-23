@@ -15,13 +15,15 @@ This project depends on `jax 0.4.3+ <https://github.com/google/jax>`_, `diffrax 
 Note that jax installation is a bit more specialized and requires selection
 dependent on your particular system. Thus, it is advised that you install it before this package.
 
+This tutorial additionally uses the library `optax <https://github.com/deepmind/optax>`_ for gradient-based optimization.
+
 Problem Setup
 -------------
 
 The key insight in this project is to interpret forecasting of ODE based 
 systems as a reparameterization of the state estimation problem.
 Throughout the remainder of the quickstart page, we demonstrate
-a method to do minimum mean squared error estimation on the manifold of
+a method to do minimum mean squared error estimation (MMSE) on the manifold of
 solutions to a differential equation.
 
 In this example, we will use the Lotka-Volterra system, provided in the
@@ -51,15 +53,15 @@ ODE solvers.
     parameters = SolverParameters(relative_tolerance = 1e-2,
                                   absolute_tolerance = 1e-2,
                                   step_size = 0.1,
-                                  time_interval = (0,10),
+                                  time_interval = (0,10.1),
                                   solver=Heun(),
                                   max_steps=16**5)
 
 
-We begin with a helper function to compute solutions of the ODE given
+Next, we construct a helper function to compute solutions of the ODE given
 a collection of initial conditions.
 To do so, we wrap ``diffeqsolve`` from Diffrax to construct a representation
-of :math:`\psi`, or the transformation from initial conditions to solutions.
+of :math:`\psi`, or the transformation from initial conditions to the manifold of solutions.
 We additionally include an automatic vectorization of :math:`\psi` using ``vmap`` in Jax.
 
 While code is included here, see the the documentation for Jax and Diffrax for more
@@ -102,14 +104,14 @@ by the following.
 
 .. math::
 
-   p(y|x) = \frac{1}{2\pi}e^{-\frac{\|\mathbf{y}-\mathbf{x}\|^2}{2}}.
+   p(\mathbf{y}|\mathbf{x}) = \frac{1}{2\pi}e^{-\frac{\|\mathbf{y}-\mathbf{x}\|^2}{2}}.
 
-We further assume a uniform prior over a feasible set.
+We further assume a uniform prior over a feasible set of initial conditions.
 
 .. math::
 
-   p(x) = \begin{cases}
-        1/4 & x \in [0.2,2.2] \times [0.2,2.2] \\
+   p(\mathbf{x}) = \begin{cases}
+        1/4 & \mathbf{x} \in [0.2,2.2] \times [0.2,2.2] \\
         0 & \text{otherwise}
         \end{cases}
 
@@ -127,13 +129,15 @@ and their log prior.
 
     def state_log_prior(state):
         """Compute log p(x) for a given state"""
-        return -1 * jnp.log(9)
+        return -1 * jnp.log(4)
 
 
 Generate Observations
 ---------------------
 
 We next simulate an observation process.
+To do so, we solve the ODE and add noise to each sample.
+As the focus is forecasting with limited data, we then only take 5 measurements, each spaced by 0.6 seconds of simulation time.
 
 .. code-block:: python
 
@@ -155,6 +159,13 @@ We next simulate an observation process.
     observation_times = observation_times[:30:subsample]
     observations = observations[:30:subsample,:]
 
+In the plot below, the solid lines represent the predator and prey populations, the dots represent our observations, and the vertical dashed red line represents the final observation time.
+
+.. image:: _static/assets/observations.svg
+   :width: 600
+   :class: tutorial-img
+
+Given the observation data and the known ODE model, our goal is to predict the entire predator-prey population curve over the 10 second time interval.
 
 State Posterior
 ---------------
@@ -166,7 +177,7 @@ represents
 
 .. math::
 
-   \tilde{p}(x|y) = \frac{p(x|y)}{Z}
+   \tilde{p}(\mathbf{x}|\mathbf{y}) = \frac{p(\mathbf{x}|\mathbf{y})}{Z}
 
 for some unknown constant :math:`Z`.
 
@@ -230,6 +241,15 @@ Finally, compute the estimate by averaging the trajectories.
 
     estimate = jnp.sum(sample_weights[:,None,None] * sample_sols, axis=0)/jnp.sum(sample_weights)
 
+
+In the plot below, we see the true predator-prey populations over time as dashed lines, while the MMSE estimate based on the previous observations as solid lines.
+The key observation is that, while the MMSE estimate is optimal, it suffers from oversmoothing the further beyond the observed region the forecast extends.
+Thus, while the function fits the probability distribution in some sense, it does not result in a valid solution of the differential equation, and does not qualitatively capture the structure of the future.
+
+.. image:: _static/assets/mmse.svg
+   :width: 600
+   :class: tutorial-img
+
 Projection
 ----------
 
@@ -287,6 +307,15 @@ We must solve the ODE one final time to compute our estimate.
 
    trajectory_estimate = SolveODE(state)
 
-Below, we include a video of the convergence of the ADAM optimizer.
+Finally, we show the results of our projection onto the manifold of feasible trajectories in the image below.
+The solid lines represent the MMSE estimate on the manifold, the dashed lines represent the true populations, and the dotted line represents the MMSE estimate in the ambient space.
+Note that the projection does a significantly better job capturing the periodic structure of the solution space.
+
+.. image:: _static/assets/final.svg
+   :width: 600
+   :class: tutorial-img
+
+Below, we include a video of the convergence of the ADAM optimizer, demonstrating the path of points in the gradient based optimization.
 
 .. video:: _static/assets/converge.mp4
+
