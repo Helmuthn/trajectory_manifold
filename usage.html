@@ -149,7 +149,7 @@ information.</p>
 <span class="n">solver</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">solver</span>
 <span class="n">observation_times</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                                <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                               <span class="n">step</span><span class="o">=</span><span class="n">parameters</span><span class="o">.</span><span class="n">step_size</span><span class="p">)</span>
+                               <span class="n">step</span><span class="o">=</span><span class="n">parameters</span><span class="o">.</span><span class="n">step_size_output</span><span class="p">)</span>
 
 <span class="n">saveat</span> <span class="o">=</span> <span class="n">SaveAt</span><span class="p">(</span><span class="n">ts</span> <span class="o">=</span> <span class="n">observation_times</span><span class="p">)</span>
 
@@ -162,7 +162,7 @@ information.</p>
                        <span class="n">solver</span><span class="p">,</span>
                        <span class="n">t0</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                        <span class="n">t1</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                       <span class="n">dt0</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+                       <span class="n">dt0</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">step_size_internal</span><span class="p">,</span>
                        <span class="n">saveat</span> <span class="o">=</span> <span class="n">saveat</span><span class="p">,</span>
                        <span class="n">stepsize_controller</span> <span class="o">=</span> <span class="n">stepsize_controller</span><span class="p">,</span>
                        <span class="n">y0</span> <span class="o">=</span> <span class="n">initial_state</span><span class="p">)</span><span class="o">.</span><span class="n">ys</span>
