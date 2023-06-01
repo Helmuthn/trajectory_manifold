@@ -77,7 +77,7 @@ information.
     solver = parameters.solver
     observation_times = jnp.arange(parameters.time_interval[0], 
                                    parameters.time_interval[1], 
-                                   step=parameters.step_size)
+                                   step=parameters.step_size_output)
 
     saveat = SaveAt(ts = observation_times)
 
@@ -90,7 +90,7 @@ information.
                            solver,
                            t0 = parameters.time_interval[0],
                            t1 = parameters.time_interval[1],
-                           dt0 = 0.1,
+                           dt0 = parameters.step_size_internal,
                            saveat = saveat,
                            stepsize_controller = stepsize_controller,
                            y0 = initial_state).ys

@@ -87,8 +87,8 @@ def construct_observations(std, key, parameters):
     term = ODETerm(vector_field)
     solver = parameters.solver
     observation_times = jnp.arange(parameters.time_interval[0], 
-                                   parameters.time_interval[1] + parameters.step_size, 
-                                   step=parameters.step_size)
+                                   parameters.time_interval[1] + parameters.step_size_output, 
+                                   step=parameters.step_size_output)
 
     saveat = SaveAt(ts = observation_times)
 
@@ -99,7 +99,7 @@ def construct_observations(std, key, parameters):
                          solver,
                          t0 = parameters.time_interval[0],
                          t1 = parameters.time_interval[1],
-                         dt0 = parameters.step_size,
+                         dt0 = parameters.step_size_internal,
                          saveat = saveat,
                          stepsize_controller = stepsize_controller,
                          y0 = true_init).ys
@@ -117,8 +117,8 @@ def construct_observations(std, key, parameters):
 def SolveODE(initial_state, parameters):
     term = ODETerm(vector_field)
     observation_times = jnp.arange(parameters.time_interval[0], 
-                                   parameters.time_interval[1] + parameters.step_size, 
-                                   step=parameters.step_size)
+                                   parameters.time_interval[1] + parameters.step_size_output, 
+                                   step=parameters.step_size_output)
 
     saveat = SaveAt(ts = observation_times)
     stepsize_controller = PIDController(rtol = parameters.relative_tolerance,
@@ -127,7 +127,7 @@ def SolveODE(initial_state, parameters):
                        solver = parameters.solver,
                        t0 = parameters.time_interval[0],
                        t1 = parameters.time_interval[1],
-                       dt0 = 0.1,
+                       dt0 = parameters.step_size_internal,
                        saveat = saveat,
                        stepsize_controller = stepsize_controller,
                        y0 = initial_state).ys
@@ -142,7 +142,7 @@ def square_distance_tensor(solution_set):
     for i in range(solution_set.shape[0]):
         for j in range(solution_set.shape[1]):
             solution = solution_set[i,j,:,:]
-            distance_mat = jnp.sum(jnp.square(solution[None, None, :, :] - solution_set), axis=(2,3)) * parameters.step_size
+            distance_mat = jnp.sum(jnp.square(solution[None, None, :, :] - solution_set), axis=(2,3)) * parameters.step_size_output
             out = out.at[i,j,:,:].set(distance_mat)
     return out
 
@@ -267,20 +267,20 @@ for i, variance in enumerate(noise_power):
         # Update Progress Bar
         inner_bar.update(1)
 
-    mse_MMSE[i] /= mcmc_samples / parameters.step_size 
-    mae_MMSE[i] /= mcmc_samples / parameters.step_size 
+    mse_MMSE[i] /= mcmc_samples / parameters.step_size_output 
+    mae_MMSE[i] /= mcmc_samples / parameters.step_size_output 
     sup_MMSE[i] /= mcmc_samples 
-    mse_MMSE_proj[i] /= mcmc_samples / parameters.step_size 
-    mae_MMSE_proj[i] /= mcmc_samples / parameters.step_size 
+    mse_MMSE_proj[i] /= mcmc_samples / parameters.step_size_output 
+    mae_MMSE_proj[i] /= mcmc_samples / parameters.step_size_output 
     sup_MMSE_proj[i] /= mcmc_samples 
-    mse_MMSE_init[i] /= mcmc_samples / parameters.step_size 
-    mae_MMSE_init[i] /= mcmc_samples / parameters.step_size 
+    mse_MMSE_init[i] /= mcmc_samples / parameters.step_size_output 
+    mae_MMSE_init[i] /= mcmc_samples / parameters.step_size_output 
     sup_MMSE_init[i] /= mcmc_samples 
-    mse_ML[i]   /= mcmc_samples / parameters.step_size 
-    mae_ML[i]   /= mcmc_samples / parameters.step_size 
+    mse_ML[i]   /= mcmc_samples / parameters.step_size_output 
+    mae_ML[i]   /= mcmc_samples / parameters.step_size_output 
     sup_ML[i]   /= mcmc_samples 
-    mse_MAP[i]  /= mcmc_samples / parameters.step_size 
-    mae_MAP[i]  /= mcmc_samples / parameters.step_size 
+    mse_MAP[i]  /= mcmc_samples / parameters.step_size_output 
+    mae_MAP[i]  /= mcmc_samples / parameters.step_size_output 
     sup_MAP[i]  /= mcmc_samples 
     outer_bar.update(1)
 
@@ -424,20 +424,20 @@ for i, horizon in enumerate(time_horizons):
         # Update Progress Bar
         inner_bar.update(1)
 
-    t_mse_MMSE[i]      /= mcmc_samples / parameters.step_size 
-    t_mae_MMSE[i]      /= mcmc_samples / parameters.step_size 
+    t_mse_MMSE[i]      /= mcmc_samples / parameters.step_size_output 
+    t_mae_MMSE[i]      /= mcmc_samples / parameters.step_size_output 
     t_sup_MMSE[i]      /= mcmc_samples 
-    t_mse_MMSE_proj[i] /= mcmc_samples / parameters.step_size 
-    t_mae_MMSE_proj[i] /= mcmc_samples / parameters.step_size 
+    t_mse_MMSE_proj[i] /= mcmc_samples / parameters.step_size_output 
+    t_mae_MMSE_proj[i] /= mcmc_samples / parameters.step_size_output 
     t_sup_MMSE_proj[i] /= mcmc_samples 
-    t_mse_MMSE_init[i] /= mcmc_samples / parameters.step_size 
-    t_mae_MMSE_init[i] /= mcmc_samples / parameters.step_size 
+    t_mse_MMSE_init[i] /= mcmc_samples / parameters.step_size_output 
+    t_mae_MMSE_init[i] /= mcmc_samples / parameters.step_size_output 
     t_sup_MMSE_init[i] /= mcmc_samples 
-    t_mse_ML[i]        /= mcmc_samples / parameters.step_size 
-    t_mae_ML[i]        /= mcmc_samples / parameters.step_size 
+    t_mse_ML[i]        /= mcmc_samples / parameters.step_size_output 
+    t_mae_ML[i]        /= mcmc_samples / parameters.step_size_output 
     t_sup_ML[i]        /= mcmc_samples 
-    t_mse_MAP[i]       /= mcmc_samples / parameters.step_size 
-    t_mae_MAP[i]       /= mcmc_samples / parameters.step_size 
+    t_mse_MAP[i]       /= mcmc_samples / parameters.step_size_output 
+    t_mae_MAP[i]       /= mcmc_samples / parameters.step_size_output 
     t_sup_MAP[i]       /= mcmc_samples 
     outer_bar.update(1)
 

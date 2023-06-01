@@ -37,7 +37,7 @@ lotka_weight = jit(lotka_sensitivity)
 vec_lotka_weight = vmap(lotka_weight, 1)
 vec_lotka_weight = jit(vec_lotka_weight)
 
-timesteps = jnp.arange(parameters.time_interval[0], parameters.time_interval[1], step=parameters.step_size)
+timesteps = jnp.arange(parameters.time_interval[0], parameters.time_interval[1], step=parameters.step_size_output)
 weight_matrix = onp.zeros((samples.shape[1], 2, timesteps.shape[0], 2))
 chunk_size = 2
 for i in tqdm(range(samples.shape[1]//chunk_size)):

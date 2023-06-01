@@ -5,19 +5,19 @@ from trajectory_manifold.examples import linear_vector_field
 
 
 import jax.numpy as jnp
-from diffrax import Tsit5
+from diffrax import Heun, ConstantStepSize
 
 from math import exp, sqrt
 
 
 
 class Test_system_sensitivity:
-    params = SolverParameters(solver=Tsit5(),
-                              relative_tolerance=1e-5,
-                              absolute_tolerance=1e-5,
+    params = SolverParameters(solver=Heun(),
                               time_interval=(0.0,1.01),
-                              step_size=0.1,
-                              max_steps=100)
+                              step_size_output=0.1,
+                              step_size_internal=1e-1,
+                              stepsize_controller=ConstantStepSize(),
+                              max_steps=int(1e2))
 
     def test_dimensions(self):
         dynamics = jnp.asarray([[-1.0, 0.0],[0.0, 1.0]])

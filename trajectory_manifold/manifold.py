@@ -13,6 +13,7 @@ from typing import Callable
 
 from diffrax import AbstractSolver, Tsit5, Heun
 from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
+from diffrax import AbstractStepSizeController
 
 from functools import partial
 from typing import NamedTuple
@@ -27,18 +28,18 @@ class SolverParameters(NamedTuple):
     including the solver, tolerances, output grid size, and time horizon.
     
     Attributes:
-        relative_tolerance: Relative tolerance for the ODE solution.
-        absolute_tolerance: Absolute tolerance for the ODE solution.
-        step_size: Output mesh size. Note: Does not impact internal computations.
+        stepsize_controller: Absolute tolerance for the ODE solution.
+        step_size_internal: Internal mesh size for constant step size controller.
+        step_size_output: Output mesh size. Note: Does not impact internal computations.
         time_interval: Tuple of (initial time, final time). The interval is 
           inclusive of the initial time, but exclusive of the final time.
         solver: The particular ODE solver to use.
         max_steps: Max steps for the solver.
     """
 
-    relative_tolerance: float
-    absolute_tolerance: float
-    step_size: float
+    stepsize_controller: AbstractStepSizeController
+    step_size_internal: float
+    step_size_output: float
     time_interval: tuple[float, float]
     solver: AbstractSolver
     max_steps: int
@@ -77,11 +78,10 @@ def system_sensitivity_and_solution(
     solver = parameters.solver
     timesteps = jnp.arange(parameters.time_interval[0], 
                            parameters.time_interval[1], 
-                           step=parameters.step_size)
+                           step=parameters.step_size_output)
 
     saveat = SaveAt(ts = timesteps)
-    stepsize_controller = PIDController(rtol = parameters.relative_tolerance,
-                                        atol = parameters.absolute_tolerance)
+    stepsize_controller = parameters.stepsize_controller
 
     @jit
     def diffeq_solution(
@@ -92,7 +92,7 @@ def system_sensitivity_and_solution(
                            solver,
                            t0 = parameters.time_interval[0],
                            t1 = parameters.time_interval[1],
-                           dt0 = 0.1,
+                           dt0 = parameters.step_size_internal,
                            saveat = saveat,
                            stepsize_controller = stepsize_controller,
                            y0 = x0,
@@ -134,11 +134,10 @@ def system_sensitivity(
     solver = parameters.solver
     timesteps = jnp.arange(parameters.time_interval[0], 
                            parameters.time_interval[1], 
-                           step=parameters.step_size)
+                           step=parameters.step_size_output)
 
     saveat = SaveAt(ts = timesteps)
-    stepsize_controller = PIDController(rtol = parameters.relative_tolerance,
-                                        atol = parameters.absolute_tolerance)
+    stepsize_controller = parameters.stepsize_controller
 
     @jit
     def diffeq_solution(
@@ -149,7 +148,7 @@ def system_sensitivity(
                            solver,
                            t0 = parameters.time_interval[0],
                            t1 = parameters.time_interval[1],
-                           dt0 = 0.1,
+                           dt0 = parameters.step_size_internal,
                            saveat = saveat,
                            stepsize_controller = stepsize_controller,
                            y0 = x0,
@@ -188,12 +187,13 @@ def system_pushforward_weight(
     max_steps = 16**4
     step_size = 0.01
     solver = Heun()
-    parameters = SolverParameters(relative_tolerance, 
-                                  absolute_tolerance, 
-                                  step_size, 
-                                  time_interval, 
-                                  solver,
-                                  max_steps)
+    parameters = SolverParameters(stepsize_controller=PIDController(rtol=relative_tolerance,
+                                                                    atol=absolute_tolerance),
+                                  step_size_internal=0.1,
+                                  step_size_output=step_size,
+                                  time_interval = time_interval,
+                                  solver=solver,
+                                  max_steps = max_steps)
 
     U = system_sensitivity(vector_field, initial_condition, parameters)
     A = trapezoidal_correlation(U, step_size)

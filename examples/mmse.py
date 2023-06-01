@@ -2,12 +2,11 @@ import matplotlib.pyplot as plt
 
 from trajectory_manifold import examples
 from trajectory_manifold.manifold import SolverParameters
-from diffrax import Heun
+from diffrax import Heun, ConstantStepSize
 
 vector_field = examples.lotka_volterra_vector_field(1,2,4,2)
 
-parameters = SolverParameters(relative_tolerance = 1e-2,
-                              absolute_tolerance = 1e-2,
+parameters = SolverParameters(ConstantStepSize(),
                               step_size = 0.1,
                               time_interval = (0,10.1),
                               solver=Heun(),
@@ -23,12 +22,11 @@ term = ODETerm(vector_field)
 solver = parameters.solver
 observation_times = jnp.arange(parameters.time_interval[0],
                                parameters.time_interval[1],
-                               step=parameters.step_size)
+                               step=parameters.step_size_output)
 
 saveat = SaveAt(ts = observation_times)
 
-stepsize_controller = PIDController(rtol = parameters.relative_tolerance,
-                                    atol = parameters.absolute_tolerance)
+stepsize_controller = parameters.stepsize_controller
 
 @jit
 def SolveODE(initial_state):
@@ -36,7 +34,7 @@ def SolveODE(initial_state):
                        solver,
                        t0 = parameters.time_interval[0],
                        t1 = parameters.time_interval[1],
-                       dt0 = 0.1,
+                       dt0 = parameters.step_size_internal,
                        saveat = saveat,
                        stepsize_controller = stepsize_controller,
                        y0 = initial_state).ys
@@ -80,7 +78,7 @@ observations = observations[:30:subsample,:]
 
 step_times = jnp.arange(parameters.time_interval[0],
                         parameters.time_interval[1],
-                        step=parameters.step_size)
+                        step=parameters.step_size_output)
 
 fig, ax = plt.subplots()
 ax.plot(step_times, states[:,0])
@@ -181,4 +179,4 @@ ax.set_xlabel("Time")
 ax.set_ylabel("Population")
 fig.set_figwidth(6)
 fig.set_figheight(4)
-fig.savefig("final.svg")
+fig.savefig("final.pdf")

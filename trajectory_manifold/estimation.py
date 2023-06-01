@@ -37,14 +37,13 @@ def trajectory_log_likelihood(
         term = ODETerm(vector_field)
         solver = parameters.solver
         saveat = SaveAt(ts = observation_times)
-        stepsize_controller = PIDController(rtol = parameters.relative_tolerance,
-                                            atol = parameters.absolute_tolerance)
+        stepsize_controller = parameters.stepsize_controller
         
         states = diffeqsolve(term,
                              solver,
                              t0 = parameters.time_interval[0],
                              t1 = parameters.time_interval[1],
-                             dt0 = 0.1,
+                             dt0 = parameters.step_size_internal,
                              saveat = saveat,
                              stepsize_controller = stepsize_controller,
                              y0 = state,
@@ -86,14 +85,13 @@ def trajectory_likelihood(
         term = ODETerm(vector_field)
         solver = parameters.solver
         saveat = SaveAt(ts = observation_times)
-        stepsize_controller = PIDController(rtol = parameters.relative_tolerance,
-                                            atol = parameters.absolute_tolerance)
+        stepsize_controller = parameters.stepsize_controller
         
         states = diffeqsolve(term,
                              solver,
                              t0 = parameters.time_interval[0],
                              t1 = parameters.time_interval[1],
-                             dt0 = 0.1,
+                             dt0 = parameters.step_size_internal,
                              saveat = saveat,
                              stepsize_controller = stepsize_controller,
                              y0 = state,

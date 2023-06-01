@@ -52,8 +52,8 @@ true_init = 2 * random.uniform(subkey, shape=(2,)) + center - 1
 term = ODETerm(vector_field)
 solver = parameters.solver
 observation_times = jnp.arange(parameters.time_interval[0], 
-                               parameters.time_interval[1] + parameters.step_size, 
-                               step=parameters.step_size)
+                               parameters.time_interval[1] + parameters.step_size_output, 
+                               step=parameters.step_size_output)
 
 saveat = SaveAt(ts = observation_times)
 
@@ -64,7 +64,7 @@ states = diffeqsolve(term,
                      solver,
                      t0 = parameters.time_interval[0],
                      t1 = parameters.time_interval[1],
-                     dt0 = parameters.step_size,
+                     dt0 = parameters.step_size_internal,
                      saveat = saveat,
                      stepsize_controller = stepsize_controller,
                      y0 = true_init).ys
@@ -138,7 +138,7 @@ def SolveODE(initial_state):
                      solver,
                      t0 = parameters.time_interval[0],
                      t1 = parameters.time_interval[1],
-                     dt0 = 0.1,
+                     dt0 = parameters.step_size_internal,
                      saveat = saveat,
                      stepsize_controller = stepsize_controller,
                      y0 = initial_state).ys
@@ -156,7 +156,7 @@ def square_distance_tensor(solution_set):
     for i in range(solution_set.shape[0]):
         for j in range(solution_set.shape[1]):
             solution = solution_set[i,j,:,:]
-            distance_mat = jnp.sum(jnp.square(solution[None, None, :, :] - solution_set), axis=(2,3)) * parameters.step_size
+            distance_mat = jnp.sum(jnp.square(solution[None, None, :, :] - solution_set), axis=(2,3)) * parameters.step_size_output
             out = out.at[i,j,:,:].set(distance_mat)
     return out
 
@@ -252,14 +252,14 @@ fig.tight_layout()
 fig.savefig("objectives.pdf", format="pdf", bbox_inches="tight")
 
 timesteps = jnp.arange(parameters.time_interval[0], 
-                               parameters.time_interval[1] + parameters.step_size, 
-                               step=parameters.step_size)
+                               parameters.time_interval[1] + parameters.step_size_output, 
+                               step=parameters.step_size_output)
 
 true_traject = diffeqsolve(term,
                      solver,
                      t0 = 0,
                      t1 = 10,
-                     dt0 = 0.1,
+                     dt0 = parameters.step_size_internal,
                      saveat = saveat,
                      stepsize_controller = stepsize_controller,
                      y0 = true_init).ys
@@ -268,7 +268,7 @@ ml_est_traject = diffeqsolve(term,
                      solver,
                      t0 = 0,
                      t1 = 10,
-                     dt0 = 0.1,
+                     dt0 = parameters.step_size_internal,
                      saveat = saveat,
                      stepsize_controller = stepsize_controller,
                      y0 = ml_est).ys
@@ -277,7 +277,7 @@ map_est_traject = diffeqsolve(term,
                      solver,
                      t0 = 0,
                      t1 = 10,
-                     dt0 = 0.1,
+                     dt0 = parameters.step_size_internal,
                      saveat = saveat,
                      stepsize_controller = stepsize_controller,
                      y0 = map_state_est).ys
@@ -286,7 +286,7 @@ map_traject_est_traject = diffeqsolve(term,
                      solver,
                      t0 = 0,
                      t1 = 10,
-                     dt0 = 0.1,
+                     dt0 = parameters.step_size_internal,
                      saveat = saveat,
                      stepsize_controller = stepsize_controller,
                      y0 = map_traj_est).ys
