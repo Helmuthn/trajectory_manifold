@@ -33,3 +33,6 @@ dependencies = [
 "Homepage" = "https://github.com/helmuthn/trajectory_manifold"
 "Documentation" = "https://www.helmuthnaumer.com/trajectory_manifold/"
 "Bug Tracker" = "https://github.com/helmuthn/trajectory_manifold/issues"
+
+[tool.ruff]
+ignore = ["F722"]
