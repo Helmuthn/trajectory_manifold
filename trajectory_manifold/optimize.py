@@ -6,7 +6,7 @@ of gradients into the ambient space, as well as helper functions
 for grid-based methods.
 """
 from typing import Callable
-from jaxtyping import Float, Array, PyTree
+from jaxtyping import Float, Array
 import jax.numpy as jnp
 from jax import random
 from .manifold import system_sensitivity_and_solution, SolverParameters
@@ -16,9 +16,10 @@ from .helpers import trapezoidal_matrix_product
 
 def distance_gradient(
     initial_condition: Float[Array, " dim"],
-    vector_field: Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]],
-    trajectory: Float[Array, " dim dim2"],
-    params: SolverParameters,
+    system_params: Float[Array, " dim2"],
+    vector_field: Callable[[Float, Float[Array, " dim"], Float[Array, " dim2"]], Float[Array, " dim"]],
+    trajectory: Float[Array, " dim dim3"],
+    solver_params: SolverParameters,
 ) -> Float[Array, " dim"]:
     """Computes the gradient of the squared distance to a chosen trajectory.
     
@@ -33,18 +34,25 @@ def distance_gradient(
         initial_condition: The initial condition around which to linearize.
         vector_field: Vector field defining the differential equation.
         trajectory: A sampled function from which the distance is computed.
-        params: Parameters for the ODE solvers.
+        solver_params: Parameters for the ODE solvers.
     
     Returns:
-        The gradient of the distance to a function"""
+        The gradient of the distance to a function
+    """
+
     sensitivity, solution = system_sensitivity_and_solution(vector_field,
                                                             initial_condition,
-                                                            params)
+                                                            system_params,
+                                                            solver_params)
     gradient_ambient = solution - trajectory
     gradient_statespace = trapezoidal_matrix_product(gradient_ambient[None, :, :], 
-                                                     sensitivity,
-                                                     params.step_size)
-    return gradient_statespace
+                                                     sensitivity[0],
+                                                     solver_params.step_size_output)
+
+    gradient_parameters = trapezoidal_matrix_product(gradient_ambient[None, :, :], 
+                                                     sensitivity[1],
+                                                     solver_params.step_size_output)
+    return gradient_statespace, gradient_parameters
     
 
 def zero_order_gradient_estimate(

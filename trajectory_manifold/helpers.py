@@ -6,7 +6,7 @@ as computation of an inner product through the trapezoidal rule.
 """
 
 from jax import jit, vmap
-from jax.lax import fori_loop
+from jax.lax import fori_loop, cond
 import jax.numpy as jnp
 
 from jaxtyping import Float, Array
@@ -186,6 +186,8 @@ def trapezoidal_correlation(
 
     M = U.shape[0]
     out = jnp.zeros((M, M))
+    if M == 0:
+        return out
 
     def inner(i, val):
         out, U, step_size = val
@@ -256,3 +258,18 @@ def trapezoidal_correlation_weighted(
     out, U, step_size = fori_loop(0, M, inner, (out, U, step_size))
 
     return out
+
+@jit
+def safe_det(A: Float[Array, " dim dim"]):
+    """Return the determinant with an empty matrix set to 1
+    
+    Used for computing the determinants of block diagonal matrices
+    in the case where a block size may be zero
+    
+    Args:
+        A: A matrix to compute the determinant
+        
+    Returns:
+        The determinant of the matrix, or 1 if the matrix is empty
+    """
+    return cond(A.shape[0] == 0, lambda x: 1.0, jnp.linalg.det, A)

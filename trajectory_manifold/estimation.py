@@ -4,7 +4,7 @@ from typing import Callable
 from jaxtyping import Float, Array
 import jax
 from .manifold import system_pushforward_weight, SolverParameters
-from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
+from diffrax import ODETerm, SaveAt, diffeqsolve
 import jax.numpy as jnp
 
 def trajectory_log_likelihood(

@@ -11,7 +11,7 @@ import jax.numpy as jnp
 from jaxtyping import Float, Array, PyTree
 from typing import Callable
 
-from diffrax import AbstractSolver, Tsit5, Heun
+from diffrax import AbstractSolver, Heun
 from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
 from diffrax import AbstractStepSizeController
 
@@ -19,6 +19,7 @@ from functools import partial
 from typing import NamedTuple
 
 from .helpers import trapezoidal_correlation, trapezoidal_correlation_weighted
+from .helpers import safe_det
 
 
 class SolverParameters(NamedTuple):
@@ -38,18 +39,19 @@ class SolverParameters(NamedTuple):
     """
 
     stepsize_controller: AbstractStepSizeController
-    step_size_internal: float
-    step_size_output: float
-    time_interval: tuple[float, float]
+    step_size_internal: Float
+    step_size_output: Float
+    time_interval: tuple[Float, Float]
     solver: AbstractSolver
     max_steps: int
 
 
-@partial(jit, static_argnames=['vector_field', 'parameters'])
+@partial(jit, static_argnames=['vector_field', 'solver_parameters'])
 def system_sensitivity_and_solution(
     vector_field: Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     initial_condition: Float[Array, " dim"],
-    parameters: SolverParameters,
+    system_parameters: Float[Array, " dim2"],
+    solver_parameters: SolverParameters,
 ) -> Float[Array, " dim timesteps dim"]:
     """Computes the differential equation sensitivity to the initial conditions.
     
@@ -75,40 +77,47 @@ def system_sensitivity_and_solution(
     """
 
     term = ODETerm(vector_field)
-    solver = parameters.solver
-    timesteps = jnp.arange(parameters.time_interval[0], 
-                           parameters.time_interval[1], 
-                           step=parameters.step_size_output)
+    solver = solver_parameters.solver
+    timesteps = jnp.arange(solver_parameters.time_interval[0], 
+                           solver_parameters.time_interval[1], 
+                           step=solver_parameters.step_size_output)
 
     saveat = SaveAt(ts = timesteps)
-    stepsize_controller = parameters.stepsize_controller
+    stepsize_controller = solver_parameters.stepsize_controller
 
     @jit
     def diffeq_solution(
         x0: Float[Array, " dim"],
+        p: Float[Array, " dim2"]
     ) -> Float[Array, " timesteps dim"]:
         """Returns the solution to the differential equation."""
         return diffeqsolve(term,
                            solver,
-                           t0 = parameters.time_interval[0],
-                           t1 = parameters.time_interval[1],
-                           dt0 = parameters.step_size_internal,
+                           t0  = solver_parameters.time_interval[0],
+                           t1  = solver_parameters.time_interval[1],
+                           dt0 = solver_parameters.step_size_internal,
                            saveat = saveat,
                            stepsize_controller = stepsize_controller,
                            y0 = x0,
-                           max_steps=parameters.max_steps).ys
+                           args = p,
+                           max_steps = solver_parameters.max_steps).ys
 
-    solution = diffeq_solution(initial_condition)
-    sensitivity = jacrev(diffeq_solution)(initial_condition)
+    solution = diffeq_solution(initial_condition, system_parameters)
+    sensitivity = jacrev(diffeq_solution, argnums=[0,1])(initial_condition, 
+                                                         system_parameters)
 
-    return jnp.moveaxis(sensitivity, 2, 0), solution
+    sensitivity = (jnp.moveaxis(sensitivity[0], 2, 0), 
+                   jnp.moveaxis(sensitivity[1], 2, 0))
+
+    return (sensitivity, solution)
 
 
-@partial(jit, static_argnames=['vector_field', 'parameters'])
+@partial(jit, static_argnames=['vector_field', 'solver_parameters'])
 def system_sensitivity(
     vector_field: Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     initial_condition: Float[Array, " dim"],
-    parameters: SolverParameters,
+    system_parameters: Float[Array, " dim2"],
+    solver_parameters: SolverParameters,
 ) -> Float[Array, " dim timesteps dim"]:
     """Computes the differential equation sensitivity to the initial conditions.
     
@@ -122,7 +131,8 @@ def system_sensitivity(
           to the derivative.
         initial_condition: The position in the statespace to be pushed onto 
           the manifold.
-        parameters: The set of parameters for the ODE solver.
+        system_parameters: The parameters for the vector field.
+        solver_parameters: The set of parameters for the ODE solver.
     
     Returns:
         A matrix where each row represents the sensitivity of the system solution
@@ -131,38 +141,42 @@ def system_sensitivity(
     """
 
     term = ODETerm(vector_field)
-    solver = parameters.solver
-    timesteps = jnp.arange(parameters.time_interval[0], 
-                           parameters.time_interval[1], 
-                           step=parameters.step_size_output)
+    solver = solver_parameters.solver
+    timesteps = jnp.arange(solver_parameters.time_interval[0], 
+                           solver_parameters.time_interval[1], 
+                           step=solver_parameters.step_size_output)
 
     saveat = SaveAt(ts = timesteps)
-    stepsize_controller = parameters.stepsize_controller
+    stepsize_controller = solver_parameters.stepsize_controller
 
     @jit
     def diffeq_solution(
         x0: Float[Array, " dim"],
+        p: Float[Array, " dim2"]
     ) -> Float[Array, " timesteps dim"]:
         """Returns the solution to the differential equation."""
         return diffeqsolve(term,
                            solver,
-                           t0 = parameters.time_interval[0],
-                           t1 = parameters.time_interval[1],
-                           dt0 = parameters.step_size_internal,
+                           t0  = solver_parameters.time_interval[0],
+                           t1  = solver_parameters.time_interval[1],
+                           dt0 = solver_parameters.step_size_internal,
                            saveat = saveat,
                            stepsize_controller = stepsize_controller,
                            y0 = x0,
-                           max_steps=parameters.max_steps).ys
+                           args = p,
+                           max_steps=solver_parameters.max_steps).ys
 
-    sensitivity = jacrev(diffeq_solution)(initial_condition)
+    sensitivity = jacrev(diffeq_solution, argnums=[0,1])(initial_condition, 
+                                                         system_parameters)
 
-    return jnp.moveaxis(sensitivity, 2, 0)
+    return (jnp.moveaxis(sensitivity[0], 2, 0), jnp.moveaxis(sensitivity[1], 2, 0))
 
 @partial(jit, static_argnames=['vector_field', 'time_interval'])
 def system_pushforward_weight(
     vector_field: Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     time_interval: tuple[float, float], 
     initial_condition: Float[Array, " dim"],
+    system_parameters: Float[Array, " dim2"],
 ) -> Float:
     """Computes the pushforward weight for a given initial condition.
     
@@ -175,8 +189,9 @@ def system_pushforward_weight(
           to the derivative.
         time_interval: Time interval for the trajectory manifold in the form
           (initial time, final time).
-        initial_conditon: The position in the statespace to be pushed onto 
+        initial_condition: The position in the statespace to be pushed onto 
           the manifold.
+        system_parameters: The parameters for the vector field.
         
     Returns:
         The weight required to push a density onto the trajectory manifold.
@@ -195,10 +210,11 @@ def system_pushforward_weight(
                                   solver=solver,
                                   max_steps = max_steps)
 
-    U = system_sensitivity(vector_field, initial_condition, parameters)
-    A = trapezoidal_correlation(U, step_size)
+    U = system_sensitivity(vector_field, initial_condition, system_parameters, parameters)
+    A = trapezoidal_correlation(U[0], step_size)
+    B = trapezoidal_correlation(U[1], step_size)
 
-    return jnp.sqrt(abs(jnp.linalg.det(A)))
+    return jnp.sqrt(abs(safe_det(A) * safe_det(B)))
 
 
 @partial(jit, static_argnames=['vector_field', 'time_interval'])
@@ -206,6 +222,7 @@ def system_pushforward_weight_reweighted(
     vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
     time_interval: Float, 
     initial_condition: Float[Array, " dim"],
+    system_parameters: Float[Array, " dim2"],
     step_size: Float,
     kernel: Float[Array, " timesteps dim dim"]
 ) -> Float:
@@ -219,8 +236,9 @@ def system_pushforward_weight_reweighted(
         vector_field: Governing differential equation mapping the current state
           to the derivative.
         time_interval: Time interval for the trajectory manifold.
-        initial_conditon: The position in the statespace to be pushed onto 
+        initial_condition: The position in the statespace to be pushed onto 
           the manifold.
+        system_parameters: The parameters for the vector field.
         step_size: The step size for the numerical solution of the ODE.
         kernel: An N by K by K array of N timesteps of an integral kernel to
           apply to a K dimensional space.
@@ -232,15 +250,17 @@ def system_pushforward_weight_reweighted(
     absolute_tolerance = 1e-2
     relative_tolerance = 1e-2
     max_steps = 16**4
-    solver = Tsit5()
-    parameters = SolverParameters(relative_tolerance, 
-                                  absolute_tolerance, 
-                                  step_size, 
-                                  time_interval, 
-                                  solver,
-                                  max_steps)
+    step_size = 0.01
+    solver = Heun()
+    parameters = SolverParameters(stepsize_controller=PIDController(rtol=relative_tolerance,
+                                                                    atol=absolute_tolerance),
+                                  step_size_internal=0.1,
+                                  step_size_output=step_size,
+                                  time_interval = time_interval,
+                                  solver=solver,
+                                  max_steps = max_steps)
 
-    U = system_sensitivity(vector_field, initial_condition, parameters)
+    U = system_sensitivity(vector_field, initial_condition, system_parameters, parameters)
     A = trapezoidal_correlation_weighted(U, step_size, kernel)
 
     return jnp.sqrt(abs(jnp.linalg.det(A)))
