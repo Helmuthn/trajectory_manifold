@@ -20,7 +20,7 @@ def distance_gradient(
     vector_field: Callable[[Float, Float[Array, " dim"], Float[Array, " dim2"]], Float[Array, " dim"]],
     trajectory: Float[Array, " dim dim3"],
     solver_params: SolverParameters,
-) -> Float[Array, " dim"]:
+) -> tuple[Float[Array, " dim"], Float[Array, " dim2"]]:
     """Computes the gradient of the squared distance to a chosen trajectory.
     
     Computes the pullback along the transformation from initial conditions

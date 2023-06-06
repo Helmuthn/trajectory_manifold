@@ -11,7 +11,6 @@ from diffrax import Heun, ConstantStepSize
 from math import exp, sqrt
 
 
-
 class Test_system_sensitivity:
     params = SolverParameters(solver=Heun(),
                               time_interval=(0.0,1.01),
