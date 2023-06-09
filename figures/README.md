@@ -13,3 +13,7 @@ Figure 3 can be generated through running `lotka-sensitivity.py`, then `lotka-qu
 - `lotka-quant.py` runs the simulations
 - `lotka-quant-plot.py` plots the results.
 
+
+NOTE:
+    Figure Generation is currently broken in the main branch.
+    To reproduce the figures from the paper, install the v0.0.1 release.
