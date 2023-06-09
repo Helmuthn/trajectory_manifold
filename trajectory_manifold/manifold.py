@@ -50,9 +50,10 @@ class SolverParameters(NamedTuple):
 def system_sensitivity_and_solution(
     vector_field: Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     initial_condition: Float[Array, " dim"],
-    system_parameters: Float[Array, " dim2"],
+    system_parameters: PyTree,
     solver_parameters: SolverParameters,
-) -> Float[Array, " dim timesteps dim"]:
+) -> tuple[tuple[Float[Array, " dim timesteps dim"], PyTree],
+           Float[Array, " timesteps dim"]]:
     """Computes the differential equation sensitivity to the initial conditions.
     
     Given a differential equation, initial condition, and desired time horizon,
@@ -88,7 +89,7 @@ def system_sensitivity_and_solution(
     @jit
     def diffeq_solution(
         x0: Float[Array, " dim"],
-        p: Float[Array, " dim2"]
+        p: PyTree
     ) -> Float[Array, " timesteps dim"]:
         """Returns the solution to the differential equation."""
         return diffeqsolve(term,
@@ -106,8 +107,12 @@ def system_sensitivity_and_solution(
     sensitivity = jacrev(diffeq_solution, argnums=[0,1])(initial_condition, 
                                                          system_parameters)
 
-    sensitivity = (jnp.moveaxis(sensitivity[0], 2, 0), 
-                   jnp.moveaxis(sensitivity[1], 2, 0))
+    if isinstance(system_parameters, jnp.ndarray):
+      sensitivity = (jnp.moveaxis(sensitivity[0], 2, 0), 
+                     jnp.moveaxis(sensitivity[1], 2, 0))
+    else:
+      sensitivity = (jnp.moveaxis(sensitivity[0], 2, 0), 
+                     sensitivity[1])
 
     return (sensitivity, solution)
 
@@ -116,7 +121,7 @@ def system_sensitivity_and_solution(
 def system_sensitivity(
     vector_field: Callable[[Float, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     initial_condition: Float[Array, " dim"],
-    system_parameters: Float[Array, " dim2"],
+    system_parameters: PyTree,
     solver_parameters: SolverParameters,
 ) -> Float[Array, " dim timesteps dim"]:
     """Computes the differential equation sensitivity to the initial conditions.
@@ -152,7 +157,7 @@ def system_sensitivity(
     @jit
     def diffeq_solution(
         x0: Float[Array, " dim"],
-        p: Float[Array, " dim2"]
+        p: PyTree
     ) -> Float[Array, " timesteps dim"]:
         """Returns the solution to the differential equation."""
         return diffeqsolve(term,
@@ -169,7 +174,11 @@ def system_sensitivity(
     sensitivity = jacrev(diffeq_solution, argnums=[0,1])(initial_condition, 
                                                          system_parameters)
 
-    return (jnp.moveaxis(sensitivity[0], 2, 0), jnp.moveaxis(sensitivity[1], 2, 0))
+    if isinstance(system_parameters, jnp.ndarray):
+      return (jnp.moveaxis(sensitivity[0], 2, 0), jnp.moveaxis(sensitivity[1], 2, 0))
+    else:
+      return (jnp.moveaxis(sensitivity[0], 2, 0), sensitivity[1])
+
 
 @partial(jit, static_argnames=['vector_field', 'time_interval'])
 def system_pushforward_weight(

@@ -10,7 +10,7 @@ from jaxtyping import Float, Array
 import jax.numpy as jnp
 from jax import random
 from .manifold import system_sensitivity_and_solution, SolverParameters
-from .helpers import trapezoidal_matrix_product
+from .helpers import trapezoidal_matrix_product, trapezoidal_pytree_vector_product
 
 
 
@@ -49,9 +49,15 @@ def distance_gradient(
                                                      sensitivity[0],
                                                      solver_params.step_size_output)
 
-    gradient_parameters = trapezoidal_matrix_product(gradient_ambient[None, :, :], 
-                                                     sensitivity[1],
-                                                     solver_params.step_size_output)
+    if isinstance(sensitivity[1], jnp.ndarray):
+        gradient_parameters = trapezoidal_matrix_product(gradient_ambient[None, :, :], 
+                                                         sensitivity[1],
+                                                         solver_params.step_size_output)
+    else:
+        gradient_parameters = trapezoidal_pytree_vector_product(gradient_ambient, 
+                                                                sensitivity[1],
+                                                                solver_params.step_size_output)
+
     return gradient_statespace, gradient_parameters
     
 

@@ -5,11 +5,12 @@ fuctions to the needs of this project. These include items such
 as computation of an inner product through the trapezoidal rule.
 """
 
-from jax import jit, vmap
+from jax import jit, vmap, tree_map
 from jax.lax import fori_loop, cond
 import jax.numpy as jnp
 
-from jaxtyping import Float, Array
+
+from jaxtyping import Float, Array, PyTree
 
 @jit
 def frobenius_inner_product(
@@ -59,6 +60,44 @@ def trapezoidal_inner_product(
     return out * step_size
     
 
+def trapezoidal_pytree_vector_product(
+        y: Float[Array, " timesteps dim"],
+        X: PyTree,
+        step_size: Float,
+    ) -> PyTree:
+    """Computes the pytree-vector product where leaves are sampled functions.
+    
+    Given a PyTree where leaves are 2-dimensional arrays representing
+    sampled function and another 2-dimensional array reepresenting
+    a single multivariate function, returns a PyTree of the same shape
+    as the original input with leaves resulting from the L2 inner
+    products with the function.
+    
+    Args:
+        y: A 2D array with indices (timestep, dim)
+        X: A PyTree where leaves are 2D arrays with indices (timestep, dim)
+        step_size: Step size required for numerical integration scaling
+    
+    Returns:
+        A PyTree of the same shape a `X`, but with results of inner products
+        as leaves.
+    """
+
+    @jit
+    def is_leaf(x):
+        if isinstance(x, jnp.ndarray) \
+           and len(x.shape) == 2 \
+           and jnp.issubdtype(x.dtype, jnp.number):
+            return True
+        else:
+            return False
+
+    @jit
+    def apply_vector(x):
+        return trapezoidal_inner_product(x, y, step_size)
+
+    return tree_map(apply_vector, X, is_leaf=is_leaf)
+
 @jit
 def trapezoidal_matrix_product(
     X: Float[Array, " functions1 timesteps dim"],
@@ -81,6 +120,7 @@ def trapezoidal_matrix_product(
     Returns:
         The result of the generalized matrix-matrix product.
     """
+
     vv = lambda x, y: trapezoidal_inner_product(x, y, step_size)
     mv = vmap(vv, (0, None), 0)
     mm = vmap(mv, (None, 0), 1)

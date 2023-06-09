@@ -46,6 +46,18 @@ class Test_system_sensitivity:
         assert abs(U[0,-1,1]) < 0.01
         assert abs(U[1,-1,0]) < 0.01
 
+    def test_parameterized_system(self):
+        def vector_field(t, x, args):
+            return args[0] * x
+        initial_condition = jnp.asarray([2.0])
+        system_params = (-1.0,-1.0)#jnp.asarray([-1.0])
+        U = system_sensitivity(vector_field,
+                               initial_condition,
+                               system_params,
+                               self.params)
+
+        assert abs(U[0][0][-1,0] - exp(-1)) < 0.01
+        assert abs(U[1][0][-1,0] - 2*exp(-1)) < 0.01
 
 class Test_system_pushforward_weight:
     system_parameters = jnp.zeros(0)
