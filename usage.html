@@ -122,16 +122,16 @@ This periodic system represents a simple predator-prey population model.</p>
 ODE solvers.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">trajectory_manifold</span> <span class="kn">import</span> <span class="n">examples</span>
 <span class="kn">from</span> <span class="nn">trajectory_manifold.manifold</span> <span class="kn">import</span> <span class="n">SolverParameters</span>
-<span class="kn">from</span> <span class="nn">diffrax</span> <span class="kn">import</span> <span class="n">Heun</span>
+<span class="kn">from</span> <span class="nn">diffrax</span> <span class="kn">import</span> <span class="n">Heun</span><span class="p">,</span> <span class="n">ConstantStepSize</span>
 
 <span class="n">vector_field</span> <span class="o">=</span> <span class="n">examples</span><span class="o">.</span><span class="n">lotka_volterra_vector_field</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
 
-<span class="n">parameters</span> <span class="o">=</span> <span class="n">SolverParameters</span><span class="p">(</span><span class="n">relative_tolerance</span> <span class="o">=</span> <span class="mf">1e-2</span><span class="p">,</span>
-                              <span class="n">absolute_tolerance</span> <span class="o">=</span> <span class="mf">1e-2</span><span class="p">,</span>
-                              <span class="n">step_size</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+<span class="n">parameters</span> <span class="o">=</span> <span class="n">SolverParameters</span><span class="p">(</span><span class="n">stepsize_controller</span> <span class="o">=</span> <span class="n">ConstantStepSize</span><span class="p">(),</span>
+                              <span class="n">step_size_internal</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+                              <span class="n">step_size_output</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
                               <span class="n">time_interval</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">10.1</span><span class="p">),</span>
-                              <span class="n">solver</span><span class="o">=</span><span class="n">Heun</span><span class="p">(),</span>
-                              <span class="n">max_steps</span><span class="o">=</span><span class="mi">16</span><span class="o">**</span><span class="mi">5</span><span class="p">)</span>
+                              <span class="n">solver</span> <span class="o">=</span> <span class="n">Heun</span><span class="p">(),</span>
+                              <span class="n">max_steps</span> <span class="o">=</span> <span class="mi">16</span><span class="o">**</span><span class="mi">5</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Next, we construct a helper function to compute solutions of the ODE given
@@ -141,12 +141,13 @@ of <span class="math notranslate nohighlight">\(\psi\)</span>, or the transforma
 We additionally include an automatic vectorization of <span class="math notranslate nohighlight">\(\psi\)</span> using <code class="docutils literal notranslate"><span class="pre">vmap</span></code> in Jax.</p>
 <p>While code is included here, see the the documentation for Jax and Diffrax for more
 information.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">diffrax</span> <span class="kn">import</span> <span class="n">ODETerm</span><span class="p">,</span> <span class="n">SaveAt</span><span class="p">,</span> <span class="n">PIDController</span><span class="p">,</span> <span class="n">diffeqsolve</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">diffrax</span> <span class="kn">import</span> <span class="n">ODETerm</span><span class="p">,</span> <span class="n">SaveAt</span><span class="p">,</span> <span class="n">diffeqsolve</span>
 <span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">jit</span><span class="p">,</span> <span class="n">vmap</span>
 <span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">jnp</span>
 
 <span class="n">term</span> <span class="o">=</span> <span class="n">ODETerm</span><span class="p">(</span><span class="n">vector_field</span><span class="p">)</span>
 <span class="n">solver</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">solver</span>
+<span class="n">system_parameters</span> <span class="o">=</span> <span class="p">()</span>
 <span class="n">observation_times</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                                <span class="n">parameters</span><span class="o">.</span><span class="n">time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
                                <span class="n">step</span><span class="o">=</span><span class="n">parameters</span><span class="o">.</span><span class="n">step_size_output</span><span class="p">)</span>
@@ -191,7 +192,7 @@ and their log prior.</p>
     <span class="n">partition</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span><span class="p">,</span> <span class="o">-</span><span class="n">observations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span> <span class="o">-</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">observation</span> <span class="o">-</span> <span class="n">state</span><span class="p">))</span><span class="o">/</span><span class="mi">2</span>
 
-<span class="k">def</span> <span class="nf">state_log_prior</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">state_log_prior</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">system_parameters</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute log p(x) for a given state&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 </pre></div>
@@ -245,7 +246,7 @@ represents</p>
 
 <span class="nd">@jit</span>
 <span class="k">def</span> <span class="nf">posterior_state</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_posterior_state</span><span class="p">(</span><span class="n">state</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_posterior_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">system_parameters</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>For sampling applications, it is desirable to have a vectorized version
@@ -294,9 +295,10 @@ To do so, we provide the function <code class="docutils literal notranslate"><sp
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">trajectory_manifold</span> <span class="kn">import</span> <span class="n">optimize</span>
 
 <span class="n">g</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="n">optimize</span><span class="o">.</span><span class="n">distance_gradient</span><span class="p">(</span><span class="n">state</span><span class="p">,</span>
+                                             <span class="n">system_parameters</span><span class="p">,</span>
                                              <span class="n">vector_field</span><span class="p">,</span>
                                              <span class="n">estimate</span><span class="p">,</span>
-                                             <span class="n">parameters</span><span class="p">)</span>
+                                             <span class="n">parameters</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 <span class="n">g</span> <span class="o">=</span> <span class="n">jit</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
 </pre></div>
 </div>
