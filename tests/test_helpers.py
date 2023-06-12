@@ -1,8 +1,10 @@
 from trajectory_manifold.helpers import trapezoidal_inner_product
 from trajectory_manifold.helpers import trapezoidal_correlation
 from trajectory_manifold.helpers import apply_kernel_vec
+from trajectory_manifold.helpers import trapezoidal_pytree_vector_product
 
 import jax.numpy as jnp
+from jax import jit
 
 class Test_trapezoidal_inner_product:
     def test_trapezoidal_norm(self):
@@ -52,3 +54,21 @@ class Test_apply_kernel_vec:
         truth = 3 * jnp.ones((functions, time_steps, dimensions))
         assert (out == truth).all()
         
+
+class Test_trapezoidal_pytree_vector_product:
+    def test_basic(self):
+        y = jnp.ones((5,2))
+        X = (jnp.ones((5,2)), jnp.zeros((5,2)))
+        step_size = 1
+        result = trapezoidal_pytree_vector_product(y, X, step_size)
+        assert result[0] == 8
+        assert result[1] == 0
+
+    def test_jit(self):
+        y = jnp.ones((5,2))
+        X = (jnp.ones((5,2)), jnp.zeros((5,2)))
+        step_size = 1
+        j_test = jit(trapezoidal_pytree_vector_product)
+        result = j_test(y, X, step_size)
+        assert result[0] == 8
+        assert result[1] == 0

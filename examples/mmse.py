@@ -6,20 +6,22 @@ from diffrax import Heun, ConstantStepSize
 
 vector_field = examples.lotka_volterra_vector_field(1,2,4,2)
 
-parameters = SolverParameters(ConstantStepSize(),
-                              step_size = 0.1,
+parameters = SolverParameters(stepsize_controller = ConstantStepSize(),
+                              step_size_internal = 0.05,
+                              step_size_output = 0.1,
                               time_interval = (0,10.1),
-                              solver=Heun(),
-                              max_steps=16**5)
+                              solver = Heun(),
+                              max_steps = 16**5)
 
 # Diffrax Setup
 
-from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
+from diffrax import ODETerm, SaveAt, diffeqsolve
 from jax import jit, vmap
 import jax.numpy as jnp
 
 term = ODETerm(vector_field)
 solver = parameters.solver
+system_parameters = ()
 observation_times = jnp.arange(parameters.time_interval[0],
                                parameters.time_interval[1],
                                step=parameters.step_size_output)
@@ -51,7 +53,7 @@ def observation_log_likelihood(observation, state):
     partition = jnp.power(2 * pi, -observations.shape[1]/2.0)
     return jnp.log(partition) - jnp.sum(jnp.square(observation - state))/2
 
-def state_log_prior(state):
+def state_log_prior(state, parameters):
     """Compute log p(x) for a given state"""
     return -1 * jnp.log(9)
 
@@ -107,7 +109,7 @@ log_posterior_state = estimation.state_log_posterior(vector_field,
 
 @jit
 def posterior_state(state):
-    return jnp.exp(log_posterior_state(state))
+    return jnp.exp(log_posterior_state(state, system_parameters))
 
 posterior_state_v = vmap(posterior_state)
 
@@ -140,9 +142,10 @@ fig.savefig("mmse.svg")
 from trajectory_manifold import optimize
 
 g = lambda state: optimize.distance_gradient(state,
+                                             system_parameters,
                                              vector_field,
                                              estimate,
-                                             parameters)
+                                             parameters)[0]
 g = jit(g)
 
 import optax

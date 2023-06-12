@@ -83,14 +83,10 @@ def trapezoidal_pytree_vector_product(
         as leaves.
     """
 
-    @jit
     def is_leaf(x):
-        if isinstance(x, jnp.ndarray) \
+        return isinstance(x, jnp.ndarray) \
            and len(x.shape) == 2 \
-           and jnp.issubdtype(x.dtype, jnp.number):
-            return True
-        else:
-            return False
+           and jnp.issubdtype(x.dtype, jnp.number)
 
     @jit
     def apply_vector(x):

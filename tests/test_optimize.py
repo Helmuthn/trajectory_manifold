@@ -79,3 +79,20 @@ class Test_distance_gradient:
         assert abs(U[0][0,0] - truth) < 0.01
         truth = (1-3*jnp.exp(-2))/4
         assert abs(U[1][0] - truth) < 0.01
+
+
+    def test_empty_pytree(self):
+        def vector_field(t, x, args):
+            return -1 * x
+        initial_condition = jnp.asarray([1.0])
+        system_parameters = ()
+        trajectory = jnp.zeros((11,1))
+        U = distance_gradient(initial_condition, 
+                              system_parameters, 
+                              vector_field,
+                              trajectory,
+                              self.params)
+
+        truth = (1-jnp.exp(-2))/2
+        assert abs(U[0][0,0] - truth) < 0.01
+        assert len(U[1]) == 0

@@ -17,10 +17,10 @@ def gaussian_log_likelihood(obs, state):
 def gaussian_likelihood(obs, state):
     return jnp.exp(jnp.sum(jnp.square(obs - state))/2)/(jnp.sqrt(2*jnp.pi))
 
-def uniform_prior(state):
+def uniform_prior(state, parameters):
     return 1.0/2.0
 
-def uniform_log_prior(state):
+def uniform_log_prior(state, parameters):
     return -jnp.log(2.0)
 
 
@@ -97,7 +97,7 @@ class Test_state_log_posterior:
         def true_lp(state, system_params):
             return gaussian_log_likelihood(state, jnp.ones(1)) \
                  + gaussian_log_likelihood(state * jnp.exp(-1), jnp.ones(1))\
-                 + uniform_log_prior(state)
+                 + uniform_log_prior(state, system_params)
 
         test_ll = state_log_posterior(vector_field,
                                            observations,
@@ -126,7 +126,7 @@ class Test_state_posterior:
         def true_lp(state, system_params):
             return gaussian_likelihood(state, jnp.ones(1)) \
                  * gaussian_likelihood(state * jnp.exp(-1), jnp.ones(1))\
-                 * uniform_prior(state)
+                 * uniform_prior(state, system_params)
 
         test_ll = state_posterior(vector_field,
                                   observations,
@@ -159,7 +159,7 @@ class Test_trajectory_log_posterior:
         def true_lp(state, system_params):
             return gaussian_log_likelihood(state, jnp.ones(1)) \
                  + gaussian_log_likelihood(state * jnp.exp(-1), jnp.ones(1))\
-                 + uniform_log_prior(state) \
+                 + uniform_log_prior(state, system_params) \
                  - jnp.log(weight)
 
         test_lp = trajectory_log_posterior(vector_field,
@@ -195,7 +195,7 @@ class Test_trajectory_posterior:
         def true_p(state, system_params):
             return gaussian_likelihood(state, jnp.ones(1)) \
                  * gaussian_likelihood(state * jnp.exp(-1), jnp.ones(1))\
-                 * uniform_prior(state) \
+                 * uniform_prior(state, system_params) \
                  / weight
 
         test_p = trajectory_posterior(vector_field,

@@ -122,7 +122,7 @@ def state_log_posterior(
     observations: Float[Array, " timesteps dim2"],
     observation_times: Float[Array, " timesteps"],
     observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
-    state_log_prior: Callable[[Float[Array, " dim"]], float],
+    log_prior: Callable[[Float[Array, " dim"], PyTree], float],
     parameters: SolverParameters,
 ) -> Callable[[Float[Array, " dim"], PyTree], float]:
     """Constructs a posterior distribution for the initial state of the system.
@@ -138,8 +138,8 @@ def state_log_posterior(
         observation_times: An N dimensional array of observation times.
         observation_likelihood: A function mapping pairs of states and 
           observations to the likelihood.
-        state_prior: A function representing the prior distribution of the
-          state of the system at the initial observation time.
+        log_prior: A function representing the prior distribution of the
+          initial state and parameters of the system.
         parameters: Parameters for the ODE solver
 
     Returns:
@@ -156,7 +156,8 @@ def state_log_posterior(
         state: Float[Array, " dim"],
         system_parameters: Float[Array, " dim3"]
     ) -> Float:
-        return log_likelihood(state, system_parameters) + state_log_prior(state)
+        return log_likelihood(state, system_parameters) \
+               + log_prior(state, parameters)
       
     return log_posterior
 
@@ -165,7 +166,7 @@ def state_posterior(
     observations: Float[Array, " timesteps dim2"],
     observation_times: Float[Array, " timesteps"],
     observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
-    state_prior: Callable[[Float[Array, " dim"]], float],
+    prior: Callable[[Float[Array, " dim"], PyTree], float],
     parameters: SolverParameters
 ) -> Callable[[Float[Array, " dim"], PyTree], Float]:
     """Constructs a posterior distribution for the initial state of the system.
@@ -181,8 +182,8 @@ def state_posterior(
         observation_times: An N dimensional array of observation times.
         observation_likelihood: A function mapping pairs of states and 
           observations to the likelihood.
-        state_prior: A function representing the prior distribution of the
-          state of the system at the initial observation time.
+        prior: A function representing the prior distribution of the
+          initial state and parameters of the system.
         parameters: Parameters for the ODE solver
 
     Returns:
@@ -199,7 +200,8 @@ def state_posterior(
         state: Float[Array, " dim"],
         system_parameters: Float[Array, " dim3"]
     ) -> Float:
-        return likelihood(state, system_parameters) * state_prior(state)
+        return likelihood(state, system_parameters) \
+                * prior(state, system_parameters)
       
     return posterior
 
@@ -209,7 +211,7 @@ def trajectory_log_posterior(
     observations: Float[Array, " timesteps dim2"],
     observation_times: Float[Array, " timesteps"],
     observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
-    state_log_prior: Callable[[Float[Array, " dim"]], float],
+    log_prior: Callable[[Float[Array, " dim"], PyTree], float],
     time_interval: tuple[float, float],
     parameters: SolverParameters,
 ) -> Callable[[Float[Array, " dim"], PyTree], Float]:
@@ -226,8 +228,8 @@ def trajectory_log_posterior(
         observation_times: An N dimensional array of observation times.
         observation_likelihood: A function mapping pairs of states and 
           observations to the likelihood.
-        state_prior: A function representing the prior distribution of the
-          state of the system at the initial observation time.
+        prior: A function representing the prior distribution of the
+          initial state and parameters of the system.
         time_interval: Time interval for the trajectory manifold in the form
           (initial time, final time).
         parameters: Parameters for the ODE solver
@@ -240,7 +242,7 @@ def trajectory_log_posterior(
                                 observations,
                                 observation_times,
                                 observation_likelihood,
-                                state_log_prior,
+                                log_prior,
                                 parameters)
     
     def weight(initial_condition, system_parameters):
@@ -258,7 +260,7 @@ def trajectory_posterior(
     observations: Float[Array, " timesteps dim2"],
     observation_times: Float[Array, " timesteps"],
     observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
-    state_prior: Callable[[Float[Array, " dim"]], float],
+    prior: Callable[[Float[Array, " dim"], PyTree], float],
     time_interval: tuple[float, float],
     parameters: SolverParameters,
 ) -> Callable[[Float[Array, " dim"], PyTree], Float]:
@@ -275,8 +277,8 @@ def trajectory_posterior(
         observation_times: An N dimensional array of observation times.
         observation_likelihood: A function mapping pairs of states and 
           observations to the likelihood.
-        state_prior: A function representing the prior distribution of the
-          state of the system at the initial observation time.
+        prior: A function representing the prior distribution of the
+          initial state and parameters of the system.
         time_interval: Time interval for the trajectory manifold in the form
           (initial time, final time).
         parameters: Parameters for the ODE solver
@@ -289,7 +291,7 @@ def trajectory_posterior(
                                 observations,
                                 observation_times,
                                 observation_likelihood,
-                                state_prior,
+                                prior,
                                 parameters)
     
     def weight(initial_condition, system_parameters):
