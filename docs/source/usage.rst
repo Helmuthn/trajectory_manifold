@@ -46,16 +46,16 @@ ODE solvers.
 
     from trajectory_manifold import examples
     from trajectory_manifold.manifold import SolverParameters
-    from diffrax import Heun
+    from diffrax import Heun, ConstantStepSize
 
     vector_field = examples.lotka_volterra_vector_field(1,2,4,2)
 
-    parameters = SolverParameters(relative_tolerance = 1e-2,
-                                  absolute_tolerance = 1e-2,
-                                  step_size = 0.1,
+    parameters = SolverParameters(stepsize_controller = ConstantStepSize(),
+                                  step_size_internal = 0.05,
+                                  step_size_output = 0.1,
                                   time_interval = (0,10.1),
-                                  solver=Heun(),
-                                  max_steps=16**5)
+                                  solver = Heun(),
+                                  max_steps = 16**5)
 
 
 Next, we construct a helper function to compute solutions of the ODE given
@@ -69,12 +69,13 @@ information.
 
 .. code-block:: python
 
-    from diffrax import ODETerm, SaveAt, PIDController, diffeqsolve
+    from diffrax import ODETerm, SaveAt, diffeqsolve
     from jax import jit, vmap
     import jax.numpy as jnp
 
     term = ODETerm(vector_field)
     solver = parameters.solver
+    system_parameters = ()
     observation_times = jnp.arange(parameters.time_interval[0], 
                                    parameters.time_interval[1], 
                                    step=parameters.step_size_output)
@@ -127,7 +128,7 @@ and their log prior.
         partition = jnp.power(2 * pi, -observations.shape[1]/2.0)
         return jnp.log(partition) - jnp.sum(jnp.square(observation - state))/2
 
-    def state_log_prior(state):
+    def state_log_prior(state, system_parameters):
         """Compute log p(x) for a given state"""
         return -1 * jnp.log(4)
 
@@ -194,7 +195,7 @@ for some unknown constant :math:`Z`.
 
     @jit
     def posterior_state(state):
-        return jnp.exp(log_posterior_state(state))
+        return jnp.exp(log_posterior_state(state, system_parameters))
 
 For sampling applications, it is desirable to have a vectorized version
 of ``posterior_state``, which can be constructed using ``vmap``, below.
@@ -267,9 +268,10 @@ To do so, we provide the function ``distance_gradient``.
     from trajectory_manifold import optimize
 
     g = lambda state: optimize.distance_gradient(state,
+                                                 system_parameters,
                                                  vector_field,
                                                  estimate,
-                                                 parameters)
+                                                 parameters)[0]
     g = jit(g)
 
 Next, import ``optax`` and configure the learner.
