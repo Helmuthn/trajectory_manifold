@@ -1,19 +1,19 @@
 """This module includes functions for statistical estimation"""
 
 from typing import Callable
-from jaxtyping import Float, Array
+from jaxtyping import Float, Array, PyTree
 import jax
 from .manifold import system_pushforward_weight, SolverParameters
 from diffrax import ODETerm, SaveAt, diffeqsolve
 import jax.numpy as jnp
 
 def trajectory_log_likelihood(
-    vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
+    vector_field: Callable[[any, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     observations: Float[Array, " timesteps dim2"],
     observation_times: Float[Array, " timesteps"],
     observation_log_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
     parameters: SolverParameters,
-) -> Callable[[Float[Array, " dim"], Float[Array, " dim3"]], Float]:
+) -> Callable[[Float[Array, " dim"], PyTree], Float]:
     """Constructs a likelihood function for a set of observations of a system.
     
     Given a representation of a differential equation, a set of observation 
@@ -27,10 +27,11 @@ def trajectory_log_likelihood(
         observation_times: An N dimensional array of observation times.
         observation_likelihood: A function mapping pairs of states and 
           observations to the likelihood.
+        parameters: Parameters for the ODE solver
 
     Returns:
-        A function mapping the state at the initial observation time to the 
-        likelihood of the observation.
+        A function mapping the state and parameters at the initial observation 
+        time to the log likelihood of the observation.
     """
 
     term = ODETerm(vector_field)
@@ -64,12 +65,12 @@ def trajectory_log_likelihood(
     return likelihood
 
 def trajectory_likelihood(
-    vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
+    vector_field: Callable[[any, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     observations: Float[Array, " timesteps dim2"],
     observation_times: Float[Array, " timesteps"],
     observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
     parameters: SolverParameters,
-) -> Callable[[Float[Array, " dim"], Float[Array, " dim3"]], Float]:
+) -> Callable[[Float[Array, " dim"], PyTree], Float]:
     """Constructs a likelihood function for a set of observations of a system.
     
     Given a representation of a differential equation, a set of observation 
@@ -83,10 +84,11 @@ def trajectory_likelihood(
         observation_times: An N dimensional array of observation times.
         observation_likelihood: A function mapping pairs of states and 
           observations to the likelihood.
+        parameters: Parameters for the ODE solver
 
     Returns:
-        A function mapping the state at the initial observation time to the 
-        likelihood of the observation.
+        A function mapping the state and parameters at the initial observation 
+        time to the likelihood of the observation.
     """
 
     def likelihood(state: Float[Array, " dim"],
@@ -116,13 +118,13 @@ def trajectory_likelihood(
 
 
 def state_log_posterior(
-    vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
+    vector_field: Callable[[any, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     observations: Float[Array, " timesteps dim2"],
     observation_times: Float[Array, " timesteps"],
     observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
     state_log_prior: Callable[[Float[Array, " dim"]], float],
     parameters: SolverParameters,
-) -> Callable[[Float[Array, " dim"]], float]:
+) -> Callable[[Float[Array, " dim"], PyTree], float]:
     """Constructs a posterior distribution for the initial state of the system.
     
     Given a representation of a differential equation, a set of observation 
@@ -138,10 +140,11 @@ def state_log_posterior(
           observations to the likelihood.
         state_prior: A function representing the prior distribution of the
           state of the system at the initial observation time.
+        parameters: Parameters for the ODE solver
 
     Returns:
-        A function mapping the state at the initial observation time to the 
-        likelihood of the observation.
+        A function mapping the state and parameters at the initial observation 
+        time to the log posterior of the trajectory.
     """
     log_likelihood = trajectory_log_likelihood(vector_field, 
                                        observations,
@@ -158,13 +161,13 @@ def state_log_posterior(
     return log_posterior
 
 def state_posterior(
-    vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
+    vector_field: Callable[[any, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     observations: Float[Array, " timesteps dim2"],
     observation_times: Float[Array, " timesteps"],
     observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
     state_prior: Callable[[Float[Array, " dim"]], float],
     parameters: SolverParameters
-) -> Callable[[Float[Array, " dim"], Float[Array, " dim3"]], Float]:
+) -> Callable[[Float[Array, " dim"], PyTree], Float]:
     """Constructs a posterior distribution for the initial state of the system.
     
     Given a representation of a differential equation, a set of observation 
@@ -180,10 +183,11 @@ def state_posterior(
           observations to the likelihood.
         state_prior: A function representing the prior distribution of the
           state of the system at the initial observation time.
+        parameters: Parameters for the ODE solver
 
     Returns:
-        A function mapping the state at the initial observation time to the 
-        likelihood of the observation.
+        A function mapping the state and initial condition at the initial 
+        observation time to the posterior of the initial condition and parameters.
     """
     likelihood = trajectory_likelihood(vector_field, 
                                        observations,
@@ -201,14 +205,14 @@ def state_posterior(
 
 
 def trajectory_log_posterior(
-    vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
+    vector_field: Callable[[any, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     observations: Float[Array, " timesteps dim2"],
     observation_times: Float[Array, " timesteps"],
     observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
     state_log_prior: Callable[[Float[Array, " dim"]], float],
     time_interval: tuple[float, float],
     parameters: SolverParameters,
-) -> Callable[[Float[Array, " dim"], Float[Array, " dim3"]], Float]:
+) -> Callable[[Float[Array, " dim"], PyTree], Float]:
     """Constructs a posterior distribution for system trajectories.
     
     Given a representation of a differential equation, a set of observation 
@@ -226,10 +230,11 @@ def trajectory_log_posterior(
           state of the system at the initial observation time.
         time_interval: Time interval for the trajectory manifold in the form
           (initial time, final time).
+        parameters: Parameters for the ODE solver
 
     Returns:
-        A function mapping the state at the initial observation time to the 
-        posterior distribution of the observation.
+        A function mapping the state and system parameters at the initial 
+        observation time to the posterior distribution of the trajectory.
     """
     log_posterior = state_log_posterior(vector_field,
                                 observations,
@@ -249,14 +254,14 @@ def trajectory_log_posterior(
                                 - jnp.log(weight(state, params))
 
 def trajectory_posterior(
-    vector_field: Callable[[any, Float[Array, " dim"], any], Float[Array, " dim"]], 
+    vector_field: Callable[[any, Float[Array, " dim"], PyTree], Float[Array, " dim"]], 
     observations: Float[Array, " timesteps dim2"],
     observation_times: Float[Array, " timesteps"],
     observation_likelihood: Callable[[Float[Array, " dim2"], Float[Array, " dim"]], float],
     state_prior: Callable[[Float[Array, " dim"]], float],
     time_interval: tuple[float, float],
     parameters: SolverParameters,
-) -> Callable[[Float[Array, " dim"], Float[Array, " dim3"]], Float]:
+) -> Callable[[Float[Array, " dim"], PyTree], Float]:
     """Constructs a posterior distribution for system trajectories.
     
     Given a representation of a differential equation, a set of observation 
@@ -274,6 +279,7 @@ def trajectory_posterior(
           state of the system at the initial observation time.
         time_interval: Time interval for the trajectory manifold in the form
           (initial time, final time).
+        parameters: Parameters for the ODE solver
 
     Returns:
         A function mapping the state at the initial observation time to the 
