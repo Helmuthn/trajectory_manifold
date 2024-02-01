@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Quick Start &#8212; Trajectory Manifold 0.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
-    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
-    <script src="_static/clipboard.min.js"></script>
-    <script src="_static/copybutton.js"></script>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=66b37b67" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=09f140b0" />
+    <script src="_static/documentation_options.js?v=2709fde1"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -23,8 +23,9 @@
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   <div class="document">
@@ -90,9 +91,9 @@
           <div class="body" role="main">
             
   <section id="quick-start">
-<h1>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this heading">¶</a></h1>
+<h1>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h1>
 <section id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h2>
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
 <p>This project is available on pypi!
 Install with:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">trajectory_manifold</span>
@@ -104,7 +105,7 @@ dependent on your particular system. Thus, it is advised that you install it bef
 <p>This tutorial additionally uses the library <a class="reference external" href="https://github.com/deepmind/optax">optax</a> for gradient-based optimization.</p>
 </section>
 <section id="problem-setup">
-<h2>Problem Setup<a class="headerlink" href="#problem-setup" title="Permalink to this heading">¶</a></h2>
+<h2>Problem Setup<a class="headerlink" href="#problem-setup" title="Link to this heading">¶</a></h2>
 <p>The key insight in this project is to interpret forecasting of ODE based
 systems as a reparameterization of the state estimation problem.
 Throughout the remainder of the quickstart page, we demonstrate
@@ -199,7 +200,7 @@ and their log prior.</p>
 </div>
 </section>
 <section id="generate-observations">
-<h2>Generate Observations<a class="headerlink" href="#generate-observations" title="Permalink to this heading">¶</a></h2>
+<h2>Generate Observations<a class="headerlink" href="#generate-observations" title="Link to this heading">¶</a></h2>
 <p>We next simulate an observation process.
 To do so, we solve the ODE and add noise to each sample.
 As the focus is forecasting with limited data, we then only take 5 measurements, each spaced by 0.6 seconds of simulation time.</p>
@@ -227,7 +228,7 @@ As the focus is forecasting with limited data, we then only take 5 measurements,
 <p>Given the observation data and the known ODE model, our goal is to predict the entire predator-prey population curve over the 10 second time interval.</p>
 </section>
 <section id="state-posterior">
-<h2>State Posterior<a class="headerlink" href="#state-posterior" title="Permalink to this heading">¶</a></h2>
+<h2>State Posterior<a class="headerlink" href="#state-posterior" title="Link to this heading">¶</a></h2>
 <p>We now use the <code class="docutils literal notranslate"><span class="pre">estimation</span></code> module to convert our log likelihood, log prior,
 and observations, and system definitions into an unnormalized log posterior.
 The following code constructs a function <code class="docutils literal notranslate"><span class="pre">posterior_state</span></code> which
@@ -256,7 +257,7 @@ of <code class="docutils literal notranslate"><span class="pre">posterior_state<
 </div>
 </section>
 <section id="importance-sampling">
-<h2>Importance Sampling<a class="headerlink" href="#importance-sampling" title="Permalink to this heading">¶</a></h2>
+<h2>Importance Sampling<a class="headerlink" href="#importance-sampling" title="Link to this heading">¶</a></h2>
 <p>We now compute the ambient minimum mean squared error (MMSE) trajectory
 through importance sampling.</p>
 <p>While more sophisticated sampling techniques may be used,
@@ -285,7 +286,7 @@ Thus, while the function fits the probability distribution in some sense, it doe
 <a class="tutorial-img reference internal image-reference" href="_images/mmse.svg"><img alt="_images/mmse.svg" class="tutorial-img" src="_images/mmse.svg" width="600" /></a>
 </section>
 <section id="projection">
-<h2>Projection<a class="headerlink" href="#projection" title="Permalink to this heading">¶</a></h2>
+<h2>Projection<a class="headerlink" href="#projection" title="Link to this heading">¶</a></h2>
 <p>Finally, we project the unconstrained solution onto the manifold.
 This results in the constrained MMSE solution by the orthogonality principle.</p>
 <p>Because the manifold is curved, this is not a linear projection.
@@ -345,11 +346,11 @@ Note that the projection does a significantly better job capturing the periodic 
     <div class="clearer"></div>
   </div>
     <div class="footer">
-      &copy;2023, Helmuth Naumer.
+      &#169;2023, Helmuth Naumer.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.0.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |
       <a href="_sources/usage.rst.txt"
