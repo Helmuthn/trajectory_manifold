@@ -24,9 +24,13 @@ noise_std = 1 # Noise Power
 center = 1.2 # Center of sample grid
 delta = 0.05 # Grid Step Size
 
-parameters = SolverParameters(relative_tolerance = 1e-2,
-                              absolute_tolerance = 1e-2,
-                              step_size = 0.1,
+stepsize_controller = PIDController(rtol = 1e-2,
+                                    atol = 1e-2)
+
+
+parameters = SolverParameters(stepsize_controller=stepsize_controller,
+                              step_size_internal = 0.1,
+                              step_size_output = 0.1,
                               time_interval = (0,10),
                               solver=Heun(),
                               max_steps=16**5)
@@ -57,9 +61,6 @@ observation_times = jnp.arange(parameters.time_interval[0],
 
 saveat = SaveAt(ts = observation_times)
 
-stepsize_controller = PIDController(rtol = parameters.relative_tolerance,
-                                    atol = parameters.absolute_tolerance)
-        
 states = diffeqsolve(term,
                      solver,
                      t0 = parameters.time_interval[0],
@@ -84,7 +85,7 @@ def observation_log_likelihood(observation, state):
     partition = jnp.power(2 * pi, -observations.shape[1]/2.0)
     return jnp.log(partition) -1 * jnp.sum(jnp.square(observation - state))/(2*noise_std**2)
 
-def state_log_prior(state):
+def state_log_prior(state, parameters):
     return -1 * jnp.log(9)
 
 log_likelihood = estimation.trajectory_log_likelihood(vector_field,
@@ -121,8 +122,8 @@ def v_pt(initial_condition):
         return out
     return lax.fori_loop(0,initial_condition.shape[0], inner, out)
 
-grid_ll = v_ll(samples.T)
-grid_ps = v_ps(samples.T)
+grid_ll = v_ll(samples.T, jnp.zeros((samples.shape[1], 0)))
+grid_ps = v_ps(samples.T, jnp.zeros((samples.shape[1], 0)))
 grid_pt = grid_ps - jnp.log(jnp.array(weight_matrix))
 
 grid_ll = jnp.reshape(grid_ll, (x.shape[0], y.shape[0]))
@@ -211,7 +212,7 @@ for i in range(posterior_state.shape[0]):
         errors = jnp.square(jnp.linalg.norm(initial_condition_mat - initial_condition_mat[:,i,j][:, None, None], axis=0))
         mse_state[i,j] = jnp.sum(errors * posterior_state)*delta**2
 
-fig, axs = plt.subplots(2,3, sharex=True, sharey=True)
+fig, axs = plt.subplots(3,2, sharex=True, sharey=True)
 im = axs[0,0].contourf(x,y, jnp.exp(grid_ll), levels=20)
 axs[0,0].set_title("Likelihood");
 cb = plt.colorbar(im)
@@ -221,32 +222,32 @@ im = axs[0,1].contourf(x,y, posterior_state, levels=20)
 axs[0,1].set_title("State Posterior");
 plt.colorbar(im)
 
-im = axs[0,2].contourf(x,y, mse_state, levels=20)
-axs[0,2].set_title("State MSE");
+im = axs[1,0].contourf(x,y, mse_state, levels=20)
+axs[1,0].set_title("State MSE");
 plt.colorbar(im)
 
-im = axs[1,2].contourf(x,y, mse_mat, levels=20)
-axs[1,2].set_title("Trajectory MSE");
+im = axs[1,1].contourf(x,y, mse_mat, levels=20)
+axs[1,1].set_title("Trajectory MSE");
 plt.colorbar(im)
 
-im = axs[1,1].contourf(x,y, posterior_trajectory, levels=20)
-axs[1,1].set_title("Trajectory Posterior");
+im = axs[2,0].contourf(x,y, posterior_trajectory, levels=20)
+axs[2,0].set_title("Trajectory Posterior");
 plt.colorbar(im)
 
-im = axs[1,0].contourf(x,y, jnp.reciprocal(jnp.reshape(weight_matrix,(x.shape[0],y.shape[0]))), levels=20)
-axs[1,0].set_title("Pushforward Weight");
+im = axs[2,1].contourf(x,y, jnp.reciprocal(jnp.reshape(weight_matrix,(x.shape[0],y.shape[0]))), levels=20)
+axs[2,1].set_title("Pushforward Weight");
 cb = plt.colorbar(im)
 cb.formatter.set_powerlimits((0,0))
 cb.ax.yaxis.set_offset_position('left')
 
 
-for i in range(2):
-    for j in range(3):
+for i in range(3):
+    for j in range(2):
         axs[i,j].scatter([true_init[0]],[true_init[1]], marker='*', color='red')
 fig.text(0.5, 0.0, "Initial Prey Population", ha='center')
 fig.text(0.0, 0.5, "Initial Predator Population", va='center', rotation='vertical')
-fig.set_figheight(3)
-fig.set_figwidth(5.5)
+fig.set_figwidth(3.75)
+fig.set_figheight(4.5)
 fig.tight_layout()
 
 fig.savefig("objectives.pdf", format="pdf", bbox_inches="tight")
@@ -299,7 +300,7 @@ initial_condition_mmse = jnp.sum(posterior_state[:,:,None] * jnp.reshape(samples
 init_mmse_traject = SolveODE(initial_condition_mmse)
 
 
-fig, axs = plt.subplots(2,3, sharex=True, sharey=True)
+fig, axs = plt.subplots(3,2, sharex=True, sharey=True)
 
 axs[0,0].plot(timesteps, true_traject, linestyle="--")
 axs[0,0].set_prop_cycle(None)
@@ -312,28 +313,28 @@ axs[0,1].set_prop_cycle(None)
 axs[0,1].plot(timesteps, map_est_traject)
 axs[0,1].set_title("MAP State")
 
+axs[2,0].plot(timesteps, true_traject, linestyle="--")
+axs[2,0].set_prop_cycle(None)
+axs[2,0].plot(timesteps, map_traject_est_traject)
+axs[2,0].set_title("MAP Trajectory")
+
 axs[1,1].plot(timesteps, true_traject, linestyle="--")
 axs[1,1].set_prop_cycle(None)
-axs[1,1].plot(timesteps, map_traject_est_traject)
-axs[1,1].set_title("MAP Trajectory")
+axs[1,1].plot(timesteps, mmse_ambient_est_traject)
+axs[1,1].set_title("Ambient MMSE Trajectory")
 
 axs[1,0].plot(timesteps, true_traject, linestyle="--")
 axs[1,0].set_prop_cycle(None)
-axs[1,0].plot(timesteps, mmse_ambient_est_traject)
-axs[1,0].set_title("Ambient MMSE Trajectory")
+axs[1,0].plot(timesteps, init_mmse_traject)
+axs[1,0].set_title("MMSE State")
 
-axs[0,2].plot(timesteps, true_traject, linestyle="--")
-axs[0,2].set_prop_cycle(None)
-axs[0,2].plot(timesteps, init_mmse_traject)
-axs[0,2].set_title("MMSE State")
+axs[2,1].plot(timesteps, true_traject, linestyle="--")
+axs[2,1].set_prop_cycle(None)
+axs[2,1].plot(timesteps, mmse_manifold_est_traject)
+axs[2,1].set_title("Manifold MMSE Trajectory")
 
-axs[1,2].plot(timesteps, true_traject, linestyle="--")
-axs[1,2].set_prop_cycle(None)
-axs[1,2].plot(timesteps, mmse_manifold_est_traject)
-axs[1,2].set_title("Manifold MMSE Trajectory")
-
-for i in range(2):
-    for j in range(3):
+for i in range(3):
+    for j in range(2):
         vline = axs[i,j].axvline(x=observation_times[::subsample][-1], linestyle="dotted", color="red")
         axs[i,j].set_xlim(0,10)
         axs[i,j].set_ylim(0,3.6)
@@ -341,8 +342,8 @@ for i in range(2):
 plt.xticks([0,3,6,9])
 fig.text(0.5,0, "Time", ha='center')
 fig.text(0,0.5,"Population",va='center', rotation='vertical')
-fig.set_figwidth(5.5)
-fig.set_figheight(3)
+fig.set_figwidth(3.75)
+fig.set_figheight(4.5)
 fig.tight_layout()
 
 fig.savefig("forecast_lotka.pdf", format="pdf", bbox_inches="tight")

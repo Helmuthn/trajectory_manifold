@@ -8,8 +8,13 @@ from trajectory_manifold.estimation import trajectory_log_posterior
 from trajectory_manifold.estimation import trajectory_posterior
 from trajectory_manifold.estimation import state_log_posterior
 from trajectory_manifold.estimation import state_posterior
+from trajectory_manifold.estimation import assign_center
+from trajectory_manifold.estimation import compute_centers
+from trajectory_manifold.estimation import kmeans
+from trajectory_manifold.estimation import compute_bounding_box
 
 import jax.numpy as jnp
+import jax.random as random
 
 def gaussian_log_likelihood(obs, state):
     return jnp.sum(jnp.square(obs - state))/2 - jnp.log(jnp.sqrt(2*jnp.pi))
@@ -207,4 +212,66 @@ class Test_trajectory_posterior:
                                           parameters)
 
         assert jnp.abs(true_p(jnp.ones(1), jnp.zeros(0)) - test_p(jnp.ones(1), jnp.zeros(0))) < 0.05
+
+
+class Test_assign_center:
+    def test_main_behavior(self):
+        centers = jnp.ones((2,5))
+        centers = centers.at[1,:].set(0)
+        point1 = jnp.zeros(5) + 0.1
+        point2 = jnp.ones(5) + 0.1
+
+        assert assign_center(point1, centers) == 1
+        assert assign_center(point2, centers) == 0
+
+    def test_main_behavior_reversed(self):
+        centers = jnp.ones((2,5))
+        centers = centers.at[0,:].set(0)
+        point1 = jnp.zeros(5) + 0.1
+        point2 = jnp.ones(5) + 0.1
+
+        assert assign_center(point1, centers) == 0
+        assert assign_center(point2, centers) == 1
+
+
+class Test_compute_centers:
+    def test_typical_behavior(self):
+        points = jnp.ones((10, 2))
+        labels = jnp.ones(10, int)
+        old_centers = jnp.ones((2, 2))
+        labels = labels.at[0:5].set(0)
+        points = points.at[0:5,:].set(2)
+
+        new_centers = compute_centers(points, labels, old_centers)
+        assert new_centers[0,0] == 2
+        assert new_centers[0,1] == 2
+        assert new_centers[1,0] == 1
+        assert new_centers[1,1] == 1
+
+class Test_kmeans:
+    def test_typical_behavior(self):
+        key = random.PRNGKey(1234)
+        points = jnp.ones((10, 2))
+        labels = jnp.ones(10, int)
+        labels = labels.at[0:5].set(0)
+        points = points.at[0:5,:].set(2)
+        initial_centers = random.normal(key, (2,2))
+        centers, labels = kmeans(points, initial_centers, 100)
+
+        assert (labels[0:4] == labels[0]).all()
+        assert (labels[5:] == labels[5]).all()
+
+class Test_compute_bounding_box:
+    def test_output_shape(self):
+        points = jnp.ones((3,3,4))
+        points = points.at[0,:,:].set(0)
+        out = compute_bounding_box(points)
+        assert out.shape == (2,3,4)
+
+    def test_basic_behavior(self):
+        points = jnp.ones((3,3,4))
+        points = points.at[0,:,:].set(0)
+        out = compute_bounding_box(points)
+        assert (out[0,...] == 1).all()
+        assert (out[1,...] == 0).all()
 

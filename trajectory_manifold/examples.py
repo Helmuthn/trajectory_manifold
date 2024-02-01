@@ -54,7 +54,7 @@ def lorenz96_vector_field(
             out, input = val
             N = input.shape[0]
 
-            new_value = (input[i+1 % N] - input[i-2]) * input[i-1] - input[i] + F
+            new_value = (input[(i+1) % N] - input[i-2]) * input[i-1] - input[i] + F
             out = out.at[i].set(new_value)
             return out, input
 
